@@ -1,0 +1,132 @@
+
+\section{Network}
+
+
+The basis network architecture, training objective and procedure are described in the following sections. The main function of the network is to classify individual data points as signal or non-signal, where every data point that falls within the duration of a transit is considered as part of the signal. Extensions, such as the prediction of flux values within data gaps, are described in a separate section, as these require slightly different network architectures and training. All of the following was implemented using PyTorch (version 1.8.1).
+
+\red{[TODO: describe that for only flux inputs, RNN assumes uniform time intervals]}
+
+\subsection{Architecture}
+
+The RNN forms the basis of the detection algorithm. Though several options for the recurrent part of the network exist, each has the properties of allowing arbitrary input sizes and providing an output for each time step of the input series. As light curves may contain many data points, we avoid the ``vanilla'' RNN, which is known to suffer from vanishing gradients. For this work, the two recurrent cells considered were LSTM (Long Short-Term Memory) and GRU (Gated Recurrent Unit). \red{[TODO: formulas]}
+
+As both directions in time are relevant for the classification of a data point, we make use of a bidirectional RNN (bi-RNN). For example, knowing that a data point is both preceded by a signal that could indicate a transit ingress and followed by one that could indicate a transit egress, would make the classification of that data point easier as compared to only knowing the past. The hidden representations of the bi-RNN components at each time step are concatenated and passed to the next layer.
+
+In order to classify each time step as signal or non-signal, the output of the network should be a single number at each time step. To achieve this, we apply fully connected layers to the output of the RNN, which project the hidden representation at each time step down to a single node. The result is passed through the sigmoid activation function. The resulting value, ranging from 0 to 1, should not be confused with probability, but does indicate the extent to which the network classified the data point as non-signal or signal respectively. Between fully connected layers, the ReLU activation function is applied to introduce non-linearities.
+
+
+\subsection{Training}
+A supervised learning approach is adopted, which relies on labeled training data. This requires knowing which data points are part of a transit signal and which are not. In our case the simulator provides a ground-truth. In the case of using real-world data, one might label known exoplanet transits as signal and everything else as non-signal, although one may never be sure of the non-existence of transit signals. Another option is to use simulated data for training and real-world data for inference. Lastly, one could inject simulated transit signals in real-world data, relying on the fact that transit signals are rare and ignoring a few real transit signals would likely not harm the performance of the network considerably.
+
+\subsubsection{Objective}
+For each data point $i$ in a light curve, the target class $t_i$ is 0 (non-signal) or 1 (signal). The network outputs a value $y_i$ between 0 and 1 at each time step. For a light curve $j$ of length $N$, the loss is given by the mean binary cross entropy loss over all time steps:
+
+\begin{equation}
+    \label{eq:objective}
+    \mathcal{L}_{j} = \mathcal{L}_{\text{BCE}, j} = \frac{1}{N} \sum_{i=0}^{N-1} w_i \cdot p_t' \cdot t_i \log y_i + (1-t_i) \log (1-y_i),
+\end{equation}
+
+
+\noindent where $p_t'$ and $w_i$ are weighting factors. Our task deals with imbalanced data sets, as the number of transit data points is always less than the non-transit data points. Therefore, in some cases it is preferred to increase the weight of transit data points for higher recall. Sometime, it is even necessary to encourage the network to start learning in general, instead of classifying all data points as non-transit. To do so, a parameter $p_t$ can be used to apply more ($p_t > 1$) weight to transit data points. Increasing $p_t$ will increase the recall, but will also lower the precision. An alternative form of weighting is to use transit-specific weighting. Some transit signals may be shallower than others, and thus should get a lower weight during training. Since we assume the transits in the training data are known, we can include their relative depths in the loss function through $w_i$. In case both $p_t$ and $w_i$ are used, a small adjustment to $p_t$ needs to made for maintaining consistent results. This is to ensure that for the same value of $p_t$ in multiple runs of training, we may expect approximately the same values for precision and recall, regardless of the values for $w_i$. The new weight for transit data points during training becomes  $p_t' = p_t \cdot \sum_i t_i / \sum_i w_i$, where for $w_i = t_i$ we have $p_t' = p_t$.
+
+
+The network is trained using mini-batches consisting of $B$ input light curves, so the combined loss per batch becomes:
+
+\begin{equation}
+    \mathcal{L} = \frac{1}{B}  \sum_{j=0}^{B-1} \mathcal{L}_{j}  = \frac{1}{B N} \sum_{j=0}^{B-1} \sum_{i=0}^{N-1}  w_i \cdot p_t' \cdot t_i \log  y_i + (1-t_i) \log (1-y_i),
+\end{equation}
+
+\noindent where we assume that each light curve in the batch is of the same length $N$. \red{[TODO: fix indexing, now $t_i$ is the same for each light curve $j$. Instead use $T_{ij}$ or similar]}. \red{[TODO: include weight decay penalty]}
+
+We used the Adam optimizer to minimize this loss during training \citep{kingma2014adam}.
+
+\subsubsection{Light curve segments}
+Typical light curves, e.g. from TESS, are too large to be used for training the RNN. Not only does the RNN iterate through the light curve recursively, the training also requires storing the gradients over each step through the light curve. In addition, the RNN cannot well learn dependencies over scales spanning thousands of data points. For these reasons, using full-length light curves would make training unnecessarily inefficient. 
+
+For training the RNN, we therefore use light curve segments, which can be obtained by splitting the original light curve in pieces, or by directly simulating smaller sized light curves. The size of these segments should be larger than the typical transit duration ($\sim$6 hours), but small enough to allow for efficient training. In this work we adopt segment sizes of $N = 1500$ spanning 50 hours in time, unless stated otherwise.
+
+The RNN is forced for this reason, to only learn local relations, e.g. features belonging to individual transits. For detecting individual transit events, periodicities in the signals are ignored (unless the period is extremely small). If the RNN subsequently applied to a full-length light curve, the detection results of individual transit events may be further inspected for periodicities.
+
+
+\subsection{Extensions}
+As this is the first work to use RNNs for transit detection, we opted to use a fairly basic network architecture as basis of the detection algorithm. Nevertheless, the true power of neural networks is often discovered through creative design choices. In the following, several extensions to the basis architecture are described that are explored in this work for our task.
+
+\subsubsection{Generative network}
+\label{sec:extension_gen}
+
+Missing data points in light curves could pose a problem to our RNN-based detection algorithm. Naively passing the available flux values through the network, would result in the network ignoring the varying time intervals between measurements. A way to counter this problem is to feed time differences between measurements in addition to the available flux values. However, this extra stream of input data could increase the risk of overfitting. Other simple approaches are to replace all missing values with zeros, or to fill gaps by linear interpolation. 
+
+Alternatively, one could let the RNN fill the gaps by itself, as a side-task to detecting transit signals. Say, an input light curve contains flux values $x_i$. For some values of $i$, $x_i = $ NaN, indicating that these values are missing. In addition to the output $y_i$, which is used classify each data point as signal or non-signal, we let the network output an additional value $\hat{x}_i$. This value represents the predicted flux value at time step $i$, based on all values at time steps $j \neq i$ \red{[TODO: fix as this is not entirely true. Each component of the bi-RNN predicts the next value at $i$, based on time steps $j < i$ and only the hiddens of both directions are contatenated]}. Each time a NaN value is encountered, $\hat{x}_i$ is used as input to the RNN instead of $x_i$. $\hat{x}_i$ is obtained by applying a separate network of fully connected layers to the outputs of the recurrent cells. In this case the sigmoid function is not applied to the final result, as the flux values are free to take any value (they may even be negative after preprocessing). 
+
+The architecture is thus extended with a few fully connected layers to obtain predictions for missing values. In order for the RNN to learn to predict these value better, we extend our loss function with a term computing the mean squared error (MSE) between the true values $x_i$ and the predicted $\hat{x}_i$:
+
+\begin{equation}
+    \mathcal{L}_{\text{MSE}, j} = \frac{1}{N} \sum_{i=0}^{N-1} (x_i - \hat{x}_i)^2,
+\end{equation}
+
+\noindent which we evaluate for all $i$ for which $x_i \neq $ NaN. The combined loss for an input light curve $j$ then becomes 
+
+\begin{equation}
+    \mathcal{L}_{j} = \mathcal{L}_{\text{BCE}, j} + \lambda_{} \mathcal{L}_{\text{MSE}, j},
+\end{equation}
+
+\noindent where $\lambda$ is used to weigh the MSE term.
+
+\subsubsection{Representation network}
+\label{sec:extension_repr}
+
+Another direction to explore is the way potential transit signals are represented within the network. It is beneficial for the network to represent transit signals different from non-transit background pattern, as this would help in the classification of data points. In the case of multiple transit signals however, the network is not encouraged to distinguish between differences in transit shapes, since all data points belonging to these signals are only labeled as signal. 
+
+However, a single light curve might contain transit signals from multiple different exoplanets. In fact, with many parameters at play that define the transit signal shape (see Section \ref{sec:challenges}), different transiting exoplanets will generally have differently shaped transit signals. Inspecting the detected transit events in such a light curve for periodicities might in this case lead to ambiguities, as each detection is treated the same. 
+
+In an attempt to resolve such ambiguities, we could encourage the network to represent differently shaped transits differently using contrastive learning. To achieve this, the basis network is extended with fully connected layers which are applied to the outputs of the recurrent cells. These so-called projection layers project the representations of each time step down to $D$ dimensions into a vector $R_i$ for time step $i$. \red{[TODO: check and cite contrastive learning paper]}. For different detected candidate transit signals, say, A and B, covering time steps $\{i_a,\dots,j_a\}$ and $\{i_b,\dots,j_b\}$ respectively, the network outputs representations $\{R_{i_a},\dots,R_{j_a}\}$ and $\{R_{i_b},\dots,R_{j_b}\}$. We can average both sets of representations to obtain $R_\text{A}$ and $R_\text{B}$, which correspond to the aggregated representations of signal A and signal B respectively. 
+
+In the supervised learning approach, we know whether A and B are signals caused by the same planet or not. Assuming that both A and B are true detections, we call A and B a positive pair if they are caused by the same planet, and a negative pair if they are signals from different planets. Actually, the network outputs a representation for each time step, regardless of whether a signal was detected at that time step. Therefore, $R_\text{A}$ and $R_\text{B}$ may as well be the aggregated representations of any two disjunct parts of the input light curve. A and B are thus also called a positive pair if they both cover a non-signal part of the light curve, and they are also called a negative pair if only one of the two corresponds to a transit signal and the other does not.
+
+The network is trained to represent positive pairs similarly, and negative pairs differently. This is achieved by adding a score of similarity between $R_\text{A}$ and $R_\text{B}$ to the loss function. The score of similarity used in this work is the cosine of the angle $\theta_{\text{A}, \text{B}}$ between $R_\text{A}$ and $R_\text{B}$:
+
+\begin{equation}
+    \text{sim}(\text{A}, \text{B})  = \frac{R_\text{A} \cdot R_\text{B}}{\|R_\text{A}\|\|R_\text{B}\|} = \cos(\theta_{\text{A}, \text{B}}).
+\end{equation}
+
+\noindent For smaller angles between the representation vectors, we consider A and B to be more similar. 
+
+During training, we present the network with pairs of light curves with the same stellar background, and pre-select a region A from the first light curve and a region B from the second. These could be true transit signals, but could also be background noise. The parameter $p_{\text{A},\text{B}}$ indicates whether A and B are a positive or a negative pair. The network is then trained to minimize the representation loss term given by
+
+\begin{equation}
+   \mathcal{L}_{\text{repr}, j} =(\text{sim}(\text{A}, \text{B}) \cdot(1 - 2 \cdot p_{\text{A},\text{B}}) + 1) / 2.
+\end{equation}
+
+\noindent The factor including $p_{\text{A},\text{B}}$ within brackets is to ensure that a positive pair with a high similarity score results in a low loss, a negative pair with high similarity results in high loss, and vice versa. The addition of 1 and subsequent division by 2 is to ensure that this loss term always has a value between 0 and 1. The combined loss for a light curve pair $j$ is then 
+
+\begin{equation}
+    \mathcal{L}_{j} = \mathcal{L}_{\text{BCE}, j} + \lambda_{} \mathcal{L}_{\text{repr}, j},
+\end{equation}
+
+\noindent where $\lambda$ is used to weigh the representation term. In this case $\mathcal{L}_{\text{BCE}, j}$ is the average of the BCE loss term over both light curves in the input pair.
+
+\subsubsection{Confidence network}
+
+Lastly, we explore a method for estimating confidence over the network predictions. As mentioned before, the output $y_i$ of the RNN at time step $i$, although conveniently bounded by 0 and 1, should not be interpreted as a probability. After all, it could still occur that the the network is presented with data that was rarely seen during training, if at all. In that case the network might output a large value for $y_i$, leaving us to believe it is highly confident of its prediction. Although it is a difficult task to obtain statistically meaningful confidence estimations over network outputs, there are ways in which we can get an indication of confidence of certain predictions in relation to others.
+
+To this end, we make use of a simple approach proposed by \cite{devries2018learning}. Only two things need to be changed in the basic setup of training. First, similar to the extensions described in sections \ref{sec:extension_gen} and \ref{sec:extension_repr}, we apply a separate network of fully connected layers to the outputs of the recurrent layer. The fully connected layers project the outputs of the recurrent layer down to a single node, which is than passed through the sigmoid activation function. The result, which we call $c_i$, is the confidence parameter given for the prediction $y_i$ at time step $i$, and is bounded by 0 and 1. The second change that needs to be made is in the BCE term of the loss function. The BCE loss for an input light curve $j$ becomes
+
+\begin{equation}
+    \mathcal{L}_{\text{BCE}, j}' = \frac{1}{N} \sum_{i=0}^{N-1} w_i \cdot p_t' \cdot t_i \log y_i' + (1-t_i) \log (1-y_i'),
+\end{equation}
+
+\noindent where the adjusted prediction $y_i'$ is given by $y_i' = c_i y_i +  (1-c_i t_i)$. Intuitively, if the confidence $c_i$ over the prediction $y_i$ is high then $y_i' \approx y_i$, and if $c_i$ is low then $y_i' \approx t_i$, where $t_i$ is the target. The network can thus ``ask for hints'' if, for example, the input data is ambiguous. 
+
+To prevent the network from always returning low confidence values, an additional term 
+
+\begin{equation}
+    \mathcal{L}_{c, j} = \frac{1}{N} \sum_{i=0}^{N-1} - \log(c_i),
+\end{equation}
+
+\noindent is included in the loss, which penalizes low values for $c_i$. The combined loss becomes
+
+\begin{equation}
+    \mathcal{L}_{j} = \mathcal{L}_{\text{BCE}, j}' + \lambda \mathcal{L}_{c, j}
+\end{equation}
+
+\noindent where $\lambda$ is used as a weighting parameter. In line with \cite{devries2018learning}, we adopt a budget parameter $\beta$ which is used during training to adjust $\lambda$. If $\mathcal{L}_{c, j} > \beta$, then we increase $\lambda$, and if $\mathcal{L}_{c, j} < \beta$, then we decrease $\lambda$. Lastly, only 50\% of the times we use $\mathcal{L}_{\text{BCE}, j}'$ and the other times we use $\mathcal{L}_{\text{BCE}, j}$ from Equation \ref{eq:objective}, in order to encourage the network to still learn meaningful decision boundaries. 

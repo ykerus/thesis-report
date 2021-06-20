@@ -1,0 +1,8 @@
+
+\section{Common approaches and limitations}
+
+An intuitive approach to search for dips in light curves is to compare at each point in time the flux within a small window with the background flux. A large enough difference could indicate a potential transit signal. In fact, this is similar to what some commonly used approaches do. The same result can be achieved by fitting a box function to the data, representing the transit signal. Better results could be obtained by fitting more realistic transit shapes to the data. 
+
+However, there are two main problems with these approaches. First of all, the transit shape is not known beforehand and can vary in duration, depth, and other features (see section \ref{sec:challenges}). Iterating over all possible combinations of these parameters can be costly. Another problem is that the background flux is not constant, instead it can be dominated by time-dependent noise. An important step in these algorithms is therefore the detrending step, in which is attempted to remove all unwanted time-dependent noise from the light curve prior to the search for transit signals. This operation comes with risks, as altering the input light curves may also harm the transit signals that we wish to find, because the signals are often intertwined with the noise. 
+
+AI comes with the potential of avoiding these problems, as background patterns and the shapes of transit signals can be learned beforehand. In the field of exoplanets, artificial intelligence is increasingly being applied, though only very limited in the task of transit detection.

@@ -1,0 +1,6 @@
+
+\section{Problem}
+
+In short, the problem addressed is that of detecting dips in stellar brightness that could indicate the presence of an transiting exoplanet. The signal may repeat itself due to the periodicity of the planet's orbit, but it may also occur only once if the observation span is shorter than the period. These candidate transit signals are searched for in a so called \textit{light curve}, describing a star's observed brightness, or flux, over time.  However, while the physics of transits is well-understood, the detection of their signatures in light curves is hindered by stellar and spacecraft induced noise. Furthermore, transit signal shapes vary, and the chance that any given light curve contains detectable transit signals is low, especially in the case of small Earth-like planets. For a full description of the challenges and their origins, see Section \ref{sec:challenges}. 
+
+To solve problem of detecting transit signals without prior knowledge of the presence of a given exoplanet, an algorithm is required that is able to detect potential signals and specify the reference time or epoch $t_0$, which is generally the time of the first occurrence of the signal, and the period $P$ if periodicity is observed. These parameters allow any follow-up step to retrieve the signal that was detected.
