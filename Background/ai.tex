@@ -1,6 +1,6 @@
 
 \section{Other relevant work in AI}
-\red{[TODO]}
+\todo{write section introduction, and extend on the subsections;  make the flow more natural, and include more related work}
 
 \subsection{Uncertainty in neural networks}
 Although the topic of uncertainty can be a thesis subject on its own, we briefly touch on the subject as uncertainties could play a role in the task of transit detection. For example, if multiple candidate transit signals are detected and detector's response is similar for all, we might wish to accept only the signals for which the detection uncertainty is below a certain threshold. For neural networks, though in some cases their output has some probabilistic meaning, in general one must be cautious with interpreting their outputs as probability. If unseen out-of-distribution data is presented to the network, which differs substantially from the training data, its outputs might not make sense anymore. \red{[TODO: explain: why would out of dist data occur?]} Instead, it would be convenient if the network outputs an additional value that indicates the confidence of a certain classification. 

@@ -1,6 +1,6 @@
 
 \section{Recurrent Neural Network (RNN)}
-\red{[TODO]}
+\todo{write short section introduction; include more RNN-related work (e.g. signal detection in ECG data)}
 
 \subsection{Application to exoplanets}
 In a task that resembles detection, \cite{hinners2018machine} compared a bi-LSTM with a feature engineering approach. Among other tasks, the task was to predict the number of transits present in a given light curve. Their bi-LSTM model produced near-random results. Other tasks included the prediction of parameters of the star given its light curve. They address the problem of the RNN-based model could be due to the fact that their data set was imbalanced. However, we note that it might have been due to the sparse learning signal that is given to the RNN. Namely, only after having seen about 7000 input data points, the RNN receives one learning signal over its single output value. This way, figuring out where transit signals are present in a given light curve can only be implicitly learned by the model, while we can also explicitly provide this information as learning signal at every time step. This idea has motivated us to develop the RNN-based transit detection algorithm presented in this work, which is further described in Chapter \ref{chap:methodology}. 

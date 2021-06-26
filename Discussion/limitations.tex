@@ -1,3 +1,11 @@
 
 \section{Limitations and suggestions}
 \red{[TODO]}
+
+\bullets{• simulated data != real data - though in 4.3 we provide examples using real data\\
+• Lilith-4 was generated before flight (see differences (\url{https://iopscience.iop.org/article/10.3847/2515-5172/ab35e0/meta}) with real TESS data)\\
+• nevertheless, simulators provide a great tool for training our method, provided good quality\\
+• uncertaintainty over P, t0 not provided by the model\\
+• some design choices depend on previous choices - all choices are considered in combination with each other (e.g. fully tuning each network architecture) gives more complete and reliable comparisons, but was computationally infeasible for this project\\
+• transits could overlap (as described in 3.1.1.5.) - model could be able to handle this - but also it was not trained on such events, so it might get confused\\
+• longest transits - need long term memory (all in-transits points classified as signal), instead one could have the model only detect ingress and egress of transit signals (begin and end), and define detections by consistent pairs - this might also help for overlapping transit }

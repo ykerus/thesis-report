@@ -106,6 +106,7 @@ During training, we present the network with pairs of light curves with the same
 \noindent where $\lambda$ is used to weigh the representation term. In this case $\mathcal{L}_{\text{BCE}, j}$ is the average of the BCE loss term over both light curves in the input pair.
 
 \subsubsection{Confidence network}
+\label{sec:extension_conf}
 
 Lastly, we explore a method for estimating confidence over the network predictions. As mentioned before, the output $y_i$ of the RNN at time step $i$, although conveniently bounded by 0 and 1, should not be interpreted as a probability. After all, it could still occur that the the network is presented with data that was rarely seen during training, if at all. In that case the network might output a large value for $y_i$, leaving us to believe it is highly confident of its prediction. Although it is a difficult task to obtain statistically meaningful confidence estimations over network outputs, there are ways in which we can get an indication of confidence of certain predictions in relation to others.
 

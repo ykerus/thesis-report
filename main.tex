@@ -3,11 +3,24 @@
 \input{packages}
 
 \newcommand{\red}[1]{{\color{red}{#1}}}
+% \newcommand{\green}[1]{{\color{green}{#1}}}
+\newcommand{\blue}[1]{{\color{blue}{#1}}}
+\definecolor{mycolor}{RGB}{128, 42, 208}
+\definecolor{mycolor2}{RGB}{0, 77, 0}
+
+\newcommand{\violet}[1]{{\color{mycolor}{#1}}}
+\newcommand{\green}[1]{{\color{mycolor2}{#1}}}
 \renewcommand{\bibname}{References}
+
 \newcommand{\todo}[1]{\red{[TODO: {#1}]}}
+\newcommand{\comment}[1]{\green{[COMMENT: {#1}]}}
+\newcommand{\bullets}[1]{\noindent\violet{{#1}}}
+
 
 \begin{document}
 \input{Titlepage/titlepage}
+
+\todo{write Acknowledgements and Abstract}
 
 {
   \hypersetup{linkcolor=black}

@@ -1,5 +1,6 @@
 
 \section{Detection algorithm}
+\label{sec:algorithms}
 
 \red{[TODO: highlight that the RNN alone is ready to be used for monotransit detection and is very efficient]}. The RNN can handle arbitrary input sizes, but will only learn local features of a light curve during training, i.e. which data point belongs to a transit signal and which does not. Parameters such as orbital period $P$ of a planet, are ignored by the network. If the network is applied to a full-length light curve after training, it might run into multiple transit events from the same planet. In the task of detecting potential exoplanets, it is important to determine the periodicity of the signal if possible, as this in combination with the epoch $t_0$ allows follow-up research to predict when the next transit events will occur. Furthermore, restricting our search to transit signals that repeat a certain number of times during the span of observations would help in reducing the number of false positive detections.
 
@@ -7,7 +8,7 @@ Following \cite{pearson2018searching}, we refer to all the network outputs $y_i$
 
 \subsection{Evaluating peak distances in RNN outputs}
 \label{sec:alg_peaks}
-
+\todo{refer to this as PTS-Peak}
 As proposed by \cite{pearson2018searching}, one approach to obtain periodicities of potential signals is to evaluate the distances between peaks in the PTS. For this, we use a Gaussian-smoothed PTS, so that peaks are not accidentally counted twice due to noise. We define a peak as a series of values above a certain peak threshold. After having identified the peaks in the PTS, the central time of each event is determined by dividing the peak's area under the curve in two, and taking the time step at the border between the two halves. One could also simply use the time step at the center of the peak, but this was found to produce less accurate results. 
 
 Subsequently, each combination of peaks is inspected for consistent timing. For example, a combination of five peaks could be evaluated and with an average distance of 4 days in the PTS. If the individual distances between subsequent peaks differ for some peaks more than a few hours, the combination of peaks is considered to be inconsistent and therefore rejected. If a combination is not rejected, it is added to a list of candidates.
@@ -20,7 +21,7 @@ The highest scoring candidate is further analysed, mainly to assess whether sing
 
 \subsection{Folding RNN outputs over trial periods}
 \label{sec:alg_folding}
-
+\todo{refer to this as PTS-Fold}
 Although the algorithm described in Section \ref{sec:alg_peaks} has its benefits, it also has its downsides. The benefit of the approach is that we let the RNN guide us where to search for periodicities. This makes it a very efficient method. However, if the RNN fails to detect one or two transit events in a light curve, or has a response that is not large enough to be picked up by this algorithm, then the algorithm might fail. For this reason, we adopt a more classical approach in addition to the algorithm described in the previous section. 
 
 The approach we take in this algorithm is that of folding the PTS over many trial periods, each time defining a candidate score at each point in the resulting phase curve. The trial periods are chosen such that the data points in the folded curve exactly coincide. In other words, the trial periods are exactly multiples of two minutes in case the input light curve is also of two minute cadence. This allows us to directly sum the PTS values of each set of points coinciding in the phase curve. This sum has the same meaning as $s$ in the previous section, and the number $n$ of transit events under consideration is in this case given by the number of data points that we take the sum of. For each trial period, we thus get a set of different scores $s/\sqrt{n}$, corresponding to different epochs $t_0$. For each trial period we store the maximum score and the corresponding epoch $t_0$. 

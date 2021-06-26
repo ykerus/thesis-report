@@ -1,5 +1,6 @@
 
 \section{Preprocessing and performance}
+\label{sec:exp_preprocessing}
 
 We assume the light curves segments are obtained from a median normalized light curve, e.g. by splitting the original light curve into equally sized parts. Assuming for now that no gaps are present in these segments, several additional preprocessing steps can be considered. One approach is to center the segments around zero by subtracting 1 from the flux values, and doing nothing else. Additionally, one could scale the light curves by their estimated noise level $\sigma$, so the network performance becomes less dependent on this noise and instead more on the transit depth relative to this noise. We refer to the latter step as sigma scaling, and adopt this in following experiments.  See figures \ref{fig:preprocessing-scaling_lcsim} and \ref{fig:preprocessing-scaling_lilith} for the effect of these basic preprocessing steps on the performance of the network during training. \todo{mention that each all data is standardized as last preprocessing step}
 

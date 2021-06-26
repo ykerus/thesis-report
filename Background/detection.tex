@@ -1,12 +1,14 @@
 
 \section{Transit signal detection methods}
-\red{[TODO]}
 
+\comment{from here onwards up to Methodology, the text was written a while ago. I am satisfied with the first few sections, but from section 2.5 (RNNs) I need to change/add a lot still.}
+
+\todo{write better section introduction}
 When Kepler or TESS data are released, both the data and the initial analyses by their data processing pipelines are released. These analyses include the detection of potential transit signals. In the following, we describe how the pipeline detections come about and discuss several other approaches that have been proposed in literature to detect transit signals.
 
 \subsection{Least squares: BLS and TLS}
 
-The Box Least Squares (BLS) algorithm, proposed by \cite{kovacs2002box}, is commonly adopted for transit signal detection [TODO: cite examples]. The transit signal is approximated by a two-level signal with a maximum of, say 1, and a minimum of $1-\delta$ in units of normalized brightness, or flux. This box signal is parametrized by its depth $\delta$, duration, period and reference time, or epoch. The search is performed by trying many values for each of these parameters, and finding minima in the squared error between the fit and the data. In order for this to work well, the light curve is expected be detrended prior to the search. Subsequently, a detection can be defined using a threshold on the signal-to-noise ratio (SNR) of the fit, or other metrics. The SNR of a transit event would intuitively be defined as $\text{SNR} = \delta / \sigma_w \cdot \sqrt{n_t}$, with $n_t$ the number of measurements that belong to the transit signal and $\sigma_w$ the estimated white noise in the detrended light curve. 
+The Box Least Squares (BLS) algorithm, proposed by \cite{kovacs2002box}, is commonly adopted for transit signal detection \todo{cite examples}. The transit signal is approximated by a two-level signal with a maximum of, say 1, and a minimum of $1-\delta$ in units of normalized brightness, or flux. This box signal is parametrized by its depth $\delta$, duration, period and reference time, or epoch. The search is performed by trying many values for each of these parameters, and finding minima in the squared error between the fit and the data. In order for this to work well, the light curve is expected be detrended prior to the search. Subsequently, a detection can be defined using a threshold on the signal-to-noise ratio (SNR) of the fit, or other metrics. The SNR of a transit event would intuitively be defined as $\text{SNR} = \delta / \sigma_w \cdot \sqrt{n_t}$, with $n_t$ the number of measurements that belong to the transit signal and $\sigma_w$ the estimated white noise in the detrended light curve. 
     
 However, according to \cite{pont2006effect} the time dependent ``red'' noise in light curves also affects transit detection. This red noise includes, for example short scale stellar activity such as granulation, which could mimic transit signals. They redefine the SNR of a transit signal by including both the white noise and the time dependent noise on the time-scale of the transit duration, and provide an algorithm to estimate these values. Their results show that a detection threshold for BLS can be set better if red noise is accounted for.
 

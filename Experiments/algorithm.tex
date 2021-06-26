@@ -1,5 +1,6 @@
 
 \section{Algorithm comparison: searching for periodic signals}
+\label{sec:exp_algorithm}
 
 If one were to focus their search on monotransits, no algorithm to determine the period is needed. Any value in the PTS above a certain threshold can be considered as potential detection (see Figure \ref{fig:algorithm-mono_example}). In most attempts of finding new planet candidates, the search is guided by the repetition of transit signals. In the following, we take a closer look at the algorithms described in sections \ref{sec:alg_peaks} and \ref{sec:alg_folding} and refer to these algorithms as PTS-Peak and PTS-Fold respectively \todo{give these name in Methodology already}.
 
@@ -30,7 +31,7 @@ In order to search for successes and failure cases of both methods, we had LCSim
 
 Nevertheless, in many cases PTS-Peak correctly retrieved the hidden signal. We therefore explore an extension to this method, which has the potential of resolving the issue of mismatching peaks in a given PTS. The network we use for this is the representation network described in Section \ref{sec:extension_repr}. For the sake of illustration, the network was trained to learn 2-dimensional representations of signals. Recall that the network outputs a representation at each time step, so the representation of a signal is the aggregation over several time steps. The angle between two representation vectors represents their dissimilarity, and since the angle does not depend on the magnitudes of the vectors we can visualize the representations of signals on the unit circle.
 
-From best to worse, figures \ref{fig:algorith-repr1}, \ref{fig:algorith-repr2} and \ref{fig:algorith-repr2} illustrate how the use of signal representations could have prevented mismatching of peaks by PTS-Peak that led to incorrect detections. \todo{Describe what else these figures say, e.g. transit depth seems to be captured, can't say much about shapes specifically. further analysis needed in further work}. \todo{explain these results were obtained with simple noisy straight lines with injected transits -- not certain whether these results will hold under disturbing background patterns}.
+From best to worse, figures \ref{fig:algorithm-repr1}, \ref{fig:algorithm-repr2} and \ref{fig:algorithm-repr2} illustrate how the use of signal representations could have prevented mismatching of peaks by PTS-Peak that led to incorrect detections. \todo{Describe what else these figures say, e.g. transit depth seems to be captured, can't say much about shapes specifically. further analysis needed in further work}. \todo{explain these results were obtained with simple noisy straight lines with injected transits -- not certain whether these results will hold under disturbing background patterns}.
 
 \begin{figure}
     \centering
