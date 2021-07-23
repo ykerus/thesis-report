@@ -1,0 +1,21 @@
+
+\section{Increasing interpretability with confidence estimation}
+
+Although the network outputs are conveniently bounded between 0 and 1, they should not be confused with probabilities. For example, when two peaks in the PTS have the same height, we cannot say that they are equally likely to correspond to true signals. This is because the input data might be slightly different than the data seen during training, which could cause the outputs of the RNN to be less reliable. In addition to the standard outputs, it would therefore be helpful to have an estimation of confidence over the predictions to know when the network is more certain of its predictions.
+
+To this end, we make use of a simple approach proposed by \cite{devries2018learning}. We extend the network from \ref{sec:architecture} by applying additional FC-layers to the outputs of the recurrent cells, which output a scalar $c_{ij}$ for each time step $j$ in light curve $i$. This value, which is mapped between 0 and 1 by the sigmoid function, represents the confidence of the network over the prediction $y_{ij}$. Since $c_{ij}$ is still the output of a neural network, it should not be interpreted as confidence in the statistical sense, but rather as indication of confidence relative to other predictions. 
+
+$c_{ij}$ is used in the loss function by replacing $y_{ij}$ with $y_{ij}' = c_{ij} y_{ij} +  (1-c_{ij} t_{ij})$ in Equation \ref{eq:bce_loss}. This means that for low confidence, i.e. $c_{ij} \approx 0$, we get that the network prediction during training becomes the same as the target, $y_{ij}' \approx t_{ij}$. For high confidence, $c_{ij} \approx 1$, the network uses its own prediction in the loss function, $y_{ij}' \approx y_{ij}$. To prevent the network from always returning low confidence values, an additional term is added to the loss function: 
+
+\begin{equation}
+    \mathcal{L}_{\text{conf},i} = 
+    \frac{1}{N}\sum^{N-1}_{j=0} -\log(c_{ij}),
+\end{equation}
+
+\noindent So the loss over a given light curve $i$ for the confidence RNN becomes:
+
+\begin{equation}
+    \mathcal{L}_i = \mathcal{L}_{\text{BCE},i} + \lambda \mathcal{L}_{\text{conf},i},
+\end{equation}
+
+\noindent where $\lambda$ is used as a weighting parameter. In line with \cite{devries2018learning}, we adopt a budget parameter $\beta$ which is used during training to adjust $\lambda$. If $\mathcal{L}_{\text{conf}} > \beta$, then we increase $\lambda$, and if $\mathcal{L}_{\text{conf}} < \beta$, then we decrease $\lambda$. Lastly, only for half the samples we use $y'_{ij}$ instead of $y_{ij}$, in order to encourage the network more to learn meaningful decision boundaries. 

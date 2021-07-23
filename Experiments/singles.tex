@@ -1,19 +1,43 @@
 
 \section{Single planet retrieval}
-\label{sec:exp_singles}
+\label{sec:singles}
 
-Similar to the experiment of retrieving monotransits from LCSim light curves, we now evaluate several methods on their ability of retrieving repeating signals from light curves. To do so, 5000 LCSim light curves were generated, each of 27.4 days and without missing data. 50\% of the light curves were injected with at least three transit signals from a single planet, and 50\% was left without signals. The task was to retrieve the correct epoch $t_0$ and period $P$ of the transit signal. $t_0$ was correct if it is anywhere within the duration of the first transit signal, and $P$ if it was off by no more than 1\% of the correct period.
+For the evaluation of the ability of the RNN-based algorithms to retrieve single planets with multiple transit signals, we apply the RNN from previous sections to light curves in the LCSim-Single data set. Subsequently, we use PTS-Fold and PTS-Peak to determine the period and epoch of a maximum of three candidate signals per light curve. Both algorithm give each candidate a corresponding score, as described in Section \ref{sec:algorithm}, which is used to set a detection threshold. A detection is counted as correct if the estimated period is correct with a 1\% error margin, and the estimated epoch is within the duration of the first transit in the light curve.
 
-Again, we used BLS as baseline for this task, which in this case is the standard algorithm that takes into account periodicities. We used \texttt{astropy}'s implementation of BLS\footnote{\url{https://docs.astropy.org/en/stable/timeseries/bls.htmls}}, with build-in heuristics for the trial periods that are searched over. The trial durations of the fitted box function range from 1 to 13 hours with steps of 30 minutes. Prior to applying BLS, the input light curves were detrended with a time-windowed median filter. Window sizes of 6, 12 and 24 hours were used, which are referred to with BLS-6h, BLS-12h and BLS-24h respectively.
+As baseline we use the standard BLS algorithm, as implemented in the \texttt{astropy} package\footnote{\url{https://docs.astropy.org/en/stable/timeseries/bls.html}}. We set a detection threshold on the SDE of each candidate in the BLS periodogram, and recursively apply the method to search for a maximum of three potential signals per light curve, each time masking the previous signal that was found. The algorithm is applied to detrended light curves using sliding median filters of varying lengths (6, 12, and 24 hours).
 
-We evaluate both PTS-Peak and PTS-Fold in this task, and set the peak threshold for PTS-Peak to 0.25. For each of the methods, the search is limited to signals with at least three repetitions and a minimum period of 2 days, because this was the minimum period used in the simulations. Moreover, each method was only allowed to return a maximum of three candidate detections per input light curve, each accompanied by a value that was used to set a detection threshold. 
+Figure \ref{fig:single_pr} shows that a 12-hour window works best for detrending in combination with BLS for this task, which is in line with the results from \cite{hippke2019wotan}. Moreover, the results show that the BLS algorithm outperformed the RNN-based detection algorithms in this experiment. Among the RNN-based algorithms tested, PTS-Fold performed best, which was as expected because it does not rely on distinct peaks in the PTS as opposed to PTS-Peak. The performance of the best performing algorithms can is further inspected in Figure \ref{fig:single_transit}. This figure shows, in line with our monotransit experiment, that towards larger periods, i.e. fewer transit signals, the performance of BLS drops faster than that of the RNN-based algorithm. This suggests that if there is periodicity in the signal, BLS remains dominant over the RNN. However, if the periodicity is lacking, the RNN is the preferred method. Table \ref{tab:single_AnotB} presents the number of planets retrieved by the methods, including the number of planets that were not found by one method and not by the other.
 
-Figure \ref{fig:singles-pr} shows the precision-recall curves for each method in the given task. The curves drop down steeper than those in Figure \ref{fig:monos-pr}, which is likely because in this case periodicities are taken into account, which reduce the chance of false detections. In this case however, BLS performed better than the RNN-based detection methods. This was for each of the chosen window sizes for detrending, although a window of 12 hours showed the best results, which is in line with the results of \cite{hippke2019wotan}. Lastly, the PTS-Fold algorithm performed better than PTS-Peak, as expected from Section \ref{sec:exp_algorithm}.
+The RNN-based algorithm required a longer computation time in this case than in the monotransit case. To obtain the PTS of each of the 5000 light curves still required only a few minutes on a GPU, but the determination of the periodicity of potential signals added more to the necessary computation time. PTS-Peak required only required 5 minutes on a CPU. PTS-Fold on the other hand, took about 1.5 hours. Still, PTS-Fold was faster than BLS with over 3 hours of computation time. The computation times are in line with the relative performances of each method in this task. 
 
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.4\linewidth]{Experiments/Figures/Singles/singles_PR.png}
-    \caption{\todo{caption; between brackets shows area under the curve (AUC), also interpreted as average precision} \todo{explain that we have no uncertainties, and these results therefore only tell something about this specific experiment. future research should confirm these findings.}}
-    \label{fig:singles-pr}
+    \includegraphics[width=0.35\linewidth]{Experiments/Figures/Singles/single_pr.pdf}
+    \caption{Precision-recall curves for different methods in the task of detecting repeating transit signals of a single planet. The average precision is given between brackets.}
+    \label{fig:single_pr}
 \end{figure}
+
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{Experiments/Figures/Singles/single_transit_specific.pdf}
+    \caption{The ability of the presented methods to retrieve planets within the given parameter ranges. A detection threshold was set closest to a corresponding detection precision of 0.5. PTS-Peak is not shown because it behaves similarly but worse than PTS-Fold and would therefore only clutter the image. Filled regions show the Wilson score interval \citep{wilson1927probable}, which approximates the 95\% confidence interval of the performance per bin.}
+    \label{fig:single_transit}
+\end{figure}
+
+
+
+\begin{table}[h]
+\label{tab:single_AnotB}
+\centering
+\begin{tabular}{@{}lrlrlrl@{}}
+\toprule
+             & \multicolumn{2}{c}{PTS-Fold} & \multicolumn{2}{c}{PTS-Peak} & \multicolumn{2}{c}{BLS-12h} \\ \midrule
+             & 1480      & (1.00, 0.59)     & 1333      & (1.00, 0.53)     & 1655     & (1.00, 0.66)     \\
+not PTS-Fold & -         &                  & 7         & (0.01, 0.00)     & 224      & (0.14, 0.09)     \\
+not PTS-Peak & 154       & (0.10, 0.06)     & -         &                  & 342      & (0.21, 0.14)     \\
+not BLS-12h  & 49        & (0.03, 0.02)     & 20        & (0.02, 0.01)     & -        &                  \\ \bottomrule
+\end{tabular}
+\caption{The absolute and relative number of correct detections in the task of retrieving planets with multiple transit signals, where the detection thresholds are set closest to a corresponding detection precision of 0.5.  The data contained a total of 2500 planets.}
+\end{table}

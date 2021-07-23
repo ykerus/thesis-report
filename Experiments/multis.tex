@@ -1,21 +1,55 @@
 
 \section{Multiplanet retrieval}
-\label{sec:exp_multis}
+\label{sec:multis}
 
-Finally, we turn from LCSim light curves to more realistic Lilith-4 light curves, which contain gaps and in some cases transit signals from multiple planets per light curve. The task in this experiment was to provide correct $t_0$ and $P$ for subset of transit signals in a subset of light curves of Lilith-4. 
+Similar to the single planet case, we compare the RNN-based detection algorithms with BLS in the task of retrieving planets with multiple transit signals. In this case we use Lilith data, which might contain transit signals from different planets within the same light curve. Again we restrict both methods to only output three candidate detections per light curve, to save on computation time.
 
-The light curves that were used, were not used for training, validating or testing of the RNN as they were set aside for this experiment from the beginning. The first selection of light curves contained all light curves that had more than one sector of data available. Subsequently, all light curves with EBs or BEBs were filtered out, as well as light curves that contained no transit signals. Counting each sector individually, we are then left with 6511 light curves. Only a subset of the transit signals is used for evaluation. For example, we ignored all transit signals that occurred less than three times in a single light curve, or had a period smaller than two days. For these choices, 3841 of the light curves contained no transit signals that were used for evaluation, 2130 contained transit signals of a single planet, 474 of two different planets, 57 of three different planets and 9 of four different planets.
-
-One baseline in this experiment is BLS-12h from Section \ref{sec:exp_singles}. Another baseline is the TESS pipeline, for which the detections for this data set are publicly available\footnote{\url{https://archive.stsci.edu/missions-and-data/tess/data-products/lilith-4}}. However, as opposed to BLS, we have no control over the amount of candidates that are returned by the pipeline. In fact, the pipeline has already set a detection threshold, so we cannot anymore evaluate the entire range of thresholds to analyze the trade-off between precision and recall. \todo{explain light curve preprocessing for BLS (outlier removal, detrending)}.
-
-We only used PTS-Fold for this experiment, because it was most competitive to BLS in the previous experiment. The gaps in the low-risk detrended light curves were filled by linear interpolation, and centroid data was used as additional input to the RNN that is used as the basis of PTS-Fold. Again, both PTS-Fold and BLS-12h were allowed to return a maximum of three candidate detections, even though there are a few samples with four separate transit signals. This was mainly to reduce the computation time for BLS.
-
-Figure \ref{fig:multis-pr} shows the precision-recall curves for each detection method in the given task. Again, the curves differ strongly from the ones in figures \ref{fig:monos-pr} and \ref{fig:singles-pr}. For the pipeline detections, this is because we only have detections above the pre-selected threshold available. The results shown here were obtained by setting different thresholds on the SNR provided with each pipeline detection, to define new sets of detections for each threshold. For PTS-Fold and BLS-12h, it is notable that both approach a recall of 1, for gradually decreasing precision. The reason for this behaviour is not entirely clear \todo{edit text according to new figure. there was a bug which is now fixed and the figure is updated}. Another interesting point is that there is no clear winner between PTS-Fold and BLS-12h in this experiment. Although PTS-Fold has the highest precision for low values of recall, BLS-12h seems to be in favor for larger recall values. In addition, the area under the curve (AUC) for both methods indicate that BLS-12h had a slightly higher average precision over the full range of recall values.
-\todo{write a bit more, also mention how many planets were found by one method which were not found by the other}
+In this experiment we also include the TESS pipeline detections for the given data set. However, since a threshold has already been set on the pipeline detections, we only have limited data, and the PR-curve for the pipeline therefore cannot be drawn fully. For the pipeline's PR-curve shown in Figure \ref{fig:multi_pr}, we set a threshold on the SNR of the detections that are provided in the DV files. It can be seen from this figure, that the pipeline's PR-curve steadily decreases, suggesting that a high AP could be obtained if we had access to all the detections below the pre-set threshold. In contrast, the RNN-based algorithms drop down steeply. Nevertheless, the RNN-based methods seem to be able to maintain high precision for the detection of about 10\% of all the planets. BLS on the other hand, starts off with relatively low precision, but is able to retrieve far more of the total amount planets. In terms of average precision, it therefore outperformed the other methods. Figure \ref{fig:multi_transit} shows the detection results over the distribution of transit samples for different parameters. We can see that each method behaves similarly, but at different levels of performance. Table \ref{tab:multi_AnotB} presents the number of planets retrieved by each method, including the number of planets that were found by one method and not by the other. Table \ref{tab:multi_AnotB} is provided to give a closer view on the ability of PTS-Fold and BLS-12h to retrieve multiple planets in a single light curve. From this table we can see that PTS-Fold is able to detect multiple planets in the same light curve, but there is room for improvement, compared to BLS-12h.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.4\linewidth]{Experiments/Figures/Multis/multis_pr.png}
-    \caption{\todo{caption; between brackets shows area under the curve (AUC), also interpreted as average precision} \todo{explain that we have no uncertainties, and these results therefore only tell something about this specific experiment. future research should confirm these findings.}}
-    \label{fig:multis-pr}
+    \includegraphics[width=0.35\linewidth]{Experiments/Figures/Multis/multi_pr.pdf}
+    \caption{Precision-recall (PR) curves of different methods in the task of detecting repeating transit signals in light curves in Lilith-4. The PR-curve for the pipeline could not be drawn fully, due to limited available data.}
+    \label{fig:multi_pr}
 \end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{Experiments/Figures/Multis/multi_transit_specific.pdf}
+    \caption{The ability of each method to retrieve planets in the given parameter ranges. A detection threshold is set closest to a corresponding detection precision of 0.5. Filled regions show the Wilson score interval \cite{wilson1927probable}, which approximates the 95\% confidence interval of the performance per bin.}
+    \label{fig:multi_transit}
+\end{figure}
+
+\begin{table}[]
+\centering
+\begin{tabular}{@{}lrlrlrl@{}}
+\toprule
+             & \multicolumn{2}{c}{PTS-Fold} & \multicolumn{2}{c}{BLS-12h} & \multicolumn{2}{c}{Pipeline} \\ \midrule
+             & 493      & (1.00, 0.15)      & 993      & (1.00, 0.30)     & 710      & (1.00, 0.22)      \\
+not PTS-Fold & -        &                   & 522      & (0.53, 0.16)     & 304      & (0.43, 0.09)      \\
+not BLS-12h  & 22       & (0.04, 0.01)      & -        &                  & 46       & (0.06, 0.01)      \\
+not Pipeline & 87       & (0.18, 0.03)      & 329      & (0.33, 0.10)     & -        &                   \\ \bottomrule
+\end{tabular}
+\caption{The absolute and relative number of correct detections in the task of retrieving planets with multiple transit signals, where the detection thresholds are set closest to a corresponding detection precision of 0.5. For the pipeline, the level of precision is in fact higher and the numbers presented here are relatively small, because we had no access to its lower confidence detections. The data contained a total of 3285 planets.}
+\end{table}
+
+\begin{table}[]
+\label{tab:multi_numpl}
+\centering
+\begin{tabular}{@{}cccccc@{}}
+\toprule
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}\# planets\\ (\# light curves)\end{tabular}} & \multirow{2}{*}{Method} & \multicolumn{4}{c}{Detected} \\
+                                                                    &          & 1   & 2  & 3 & 4 \\ \midrule
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}1\\ (2130)\end{tabular}} & PTS-Fold & 371 &    &   &   \\
+                                                                    & BLS-12h  & 666 &    &   &   \\ \cdashlinelr{1-6}
+                                                    
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}2\\ (474)\end{tabular}}  & PTS-Fold & 80  & 9  &   &   \\
+                                                                    & BLS-12h  & 120 & 65 &   &   \\ \cdashlinelr{1-6}
+                                                    
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}3\\ (57)\end{tabular}}   & PTS-Fold & 13  & 5  & 0 &   \\
+                                                                    & BLS-12h  & 8   & 20 & 6 &   \\ \cdashlinelr{1-6}
+\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}4\\ (9)\end{tabular}}    & PTS-Fold & 1   & 0  & 0 & 0 \\
+                                                                    & BLS-12h  & 4   & 2  & 1 & 0 \\ \bottomrule
+\end{tabular}
+\caption{The number of correctly detected planets per light curve with a given number of planets. For example, of the 57 light curves that contained 2 planets, PTS-Fold was able to retrieve 2 planets from 5 light curves, and only 1 planet from 13 light curves.  The detection threshold was set closest to a corresponding detection precision of 0.5.}
+\end{table}

@@ -1,0 +1,32 @@
+
+\section{Separating signals from different planets}
+
+Another way to increase the interpretability over the network outputs is to utilize the network's representations of each data point. This comes in helpful if there are only a few potential transit signals in a given light curve. Based on the PTS only, we cannot tell whether the individual signals appear different from each other. The detection algorithm might thus match the wrong signals together, leading to an incorrect detection which may been prevented if signal shapes are taken into account. 
+
+To illustrate how one could use an RNN and still take into account different signal shapes, we extend the network to learn representations of signals, such that signals from different planets are represented differently. The network from \ref{sec:architecture}i s extended with FC-layers layers which are applied to the outputs of the recurrent cells. These layers project the representations of each time step down to $D$ dimensions into a vector $R_{ij}$ for time step $j$ in light curve $i$. For different candidate transit signals, say, A and B, covering time steps $\{k,\dots,l\}$ and $\{m,\dots,n\}$ respectively, the network outputs representations $\{R_{ik},\dots,R_{il}\}$ and $\{R_{im},\dots,R_{in}\}$. We can average both sets of representations to obtain $R_\text{A}$ and $R_\text{B}$, which correspond to the aggregated representations of signal A and signal B respectively. 
+
+In the supervised learning approach, we know whether A and B are signals caused by the same planet or not. Assuming that both A and B are true detections, we call A and B a positive pair if they are caused by the same planet, and a negative pair if they are signals from different planets. Actually, the network outputs a representation for each time step, regardless of whether a signal was detected at that time step. Therefore, $R_\text{A}$ and $R_\text{B}$ may as well be the aggregated representations of any two disjunct parts of the input light curve. A and B are thus also called a positive pair if they both cover a non-signal part of the light curve, and they are also called a negative pair if only one of the two corresponds to a transit signal and the other does not.
+
+
+The network is trained to represent positive pairs similarly, and negative pairs differently. This is achieved by adding a score of similarity between $R_\text{A}$ and $R_\text{B}$ to the loss function. The score of similarity used in this work is the cosine of the angle $\theta_{\text{A}, \text{B}}$ between $R_\text{A}$ and $R_\text{B}$:
+\todo{add cosine similarity source}
+
+\begin{equation}
+    \text{sim}(\text{A}, \text{B})  = \frac{R_\text{A} \cdot R_\text{B}}{\|R_\text{A}\|\|R_\text{B}\|} = \cos(\theta_{\text{A}, \text{B}}).
+\end{equation}
+
+\noindent For smaller angles between the representation vectors, A and B are considered to be more similar. 
+
+During training, we present the network with pairs of light curves with the same stellar background, and pre-select a region A from the first light curve and a region B from the second. These could be true transit signals, but could also be background noise. The parameter $p_{\text{A},\text{B}}$ indicates whether A and B are a positive or a negative pair. The network is then trained to minimize the representation loss term given by
+
+\begin{equation}
+   \mathcal{L}_{\text{repr}, j} =(\text{sim}(\text{A}, \text{B}) \cdot(1 - 2 \cdot p_{\text{A},\text{B}}) + 1) / 2.
+\end{equation}
+
+\noindent The factor including $p_{\text{A},\text{B}}$ within brackets is to ensure that a positive pair with a high similarity score results in a low loss, a negative pair with high similarity results in high loss, and vice versa. The addition of 1 and subsequent division by 2 is to ensure that this loss term always has a value between 0 and 1. The combined loss for a light curve pair $i$ is then 
+
+\begin{equation}
+    \mathcal{L}_{i} = \mathcal{L}_{\text{BCE}, i} + \lambda_{} \mathcal{L}_{\text{repr}, i},
+\end{equation}
+
+\noindent where $\lambda$ is used to weigh the representation term. In this case $\mathcal{L}_{\text{BCE}, i}$ is the average of the BCE loss term over both light curves in the input pair.

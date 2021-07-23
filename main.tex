@@ -18,6 +18,7 @@
 
 
 \begin{document}
+%% \input{Titlepage/title-page-ai}
 \input{Titlepage/titlepage}
 
 \todo{write Acknowledgements and Abstract}
@@ -31,37 +32,42 @@
 \label{chap:introduction}
 \input{Introduction/intro}
 \input{Introduction/problem}
-\input{Introduction/motivation}
+\input{Introduction/aims}
 \input{Introduction/approaches}
+\input{Introduction/proposed}
 \input{Introduction/contributions}
 \input{Introduction/outline}
 
 \chapter{Background}
 \label{chap:background}
 \input{Background/intro}
-\input{Background/exoplanets}
-\input{Background/discovery}
+\input{Background/transit}
+\input{Background/missions}
+\input{Background/challenges}
 \input{Background/detection}
-\input{Background/identification}
 \input{Background/rnn}
-\input{Background/ai}
 
 \chapter{Methodology}
 \label{chap:methodology}
+
 \input{Methodology/intro}
-\input{Methodology/simulations}
 \input{Methodology/network}
 \input{Methodology/algorithm}
+\input{Methodology/gaps}
+\input{Methodology/interpretability}
+\input{Methodology/representations}
+\input{Methodology/simulations}
+
 
 \chapter{Experiments and results}
 \label{chap:experiments}
 \input{Experiments/intro}
-\input{Experiments/hybrid}
 \input{Experiments/preprocessing}
-\input{Experiments/algorithm}
+\input{Experiments/models}
 \input{Experiments/monos}
 \input{Experiments/singles}
 \input{Experiments/multis}
+\input{Experiments/cases}
 
 \chapter{Discussion}
 \label{chap:discussion}
@@ -82,9 +88,9 @@
 \appendix
 \addtocontents{toc}{\protect\setcounter{tocdepth}{-1}}
 \chapter{}
+\label{appendix}
 \addtocontents{toc}{\protect\setcounter{tocdepth}{4}}
 \addcontentsline{toc}{chapter}{Appendix}
 \input{Appendix/conferences}
 
 \end{document}
-

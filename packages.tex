@@ -20,3 +20,29 @@
 \usepackage{siunitx} % scientific notation
 
 \usepackage[titletoc,toc,page]{appendix} % for appendix format
+
+\usepackage{amssymb}  % for real value notation
+\usepackage{booktabs}  % fancy tables
+\usepackage{multirow}  % multirow tables
+
+\usepackage{arydshln}  % dashed lines
+\makeatletter
+\def\adl@drawiv#1#2#3{%
+        \hskip.5\tabcolsep
+        \xleaders#3{#2.5\@tempdimb #1{1}#2.5\@tempdimb}%
+                #2\z@ plus1fil minus1fil\relax
+        \hskip.5\tabcolsep}
+\newcommand{\cdashlinelr}[1]{%
+  \noalign{\vskip\aboverulesep
+          \global\let\@dashdrawstore\adl@draw
+          \global\let\adl@draw\adl@drawiv}
+  \cdashline{#1}
+  \noalign{\global\let\adl@draw\@dashdrawstore
+          \vskip\belowrulesep}}
+\makeatother   % dashed lines
+
+
+\usepackage{tikz}  % graphical model
+\usetikzlibrary{bayesnet}  % graphical model
+\usetikzlibrary{arrows}   % graphical model
+\usetikzlibrary{backgrounds}  % graphical model

@@ -1,79 +1,73 @@
 
 \section{Preprocessing and performance}
-\label{sec:exp_preprocessing}
+\label{sec:preprocessing}
 
-We assume the light curves segments are obtained from a median normalized light curve, e.g. by splitting the original light curve into equally sized parts. Assuming for now that no gaps are present in these segments, several additional preprocessing steps can be considered. One approach is to center the segments around zero by subtracting 1 from the flux values, and doing nothing else. Additionally, one could scale the light curves by their estimated noise level $\sigma$, so the network performance becomes less dependent on this noise and instead more on the transit depth relative to this noise. We refer to the latter step as sigma scaling, and adopt this in following experiments.  See figures \ref{fig:preprocessing-scaling_lcsim} and \ref{fig:preprocessing-scaling_lilith} for the effect of these basic preprocessing steps on the performance of the network during training. \todo{mention that each all data is standardized as last preprocessing step}
+Preprocessing is a vital step of the algorithm, so we first evaluate the effect of different preprocessing steps on the performance of the RNN. Often in classification tasks, the accuracy is used as a measure of the model's performance. However, since we are dealing with an imbalanced data set, the accuracy might give a wrong impression, because classifying each data point as non-signal would already result in high accuracy. Therefore we primarily look at the precision and recall, which are given by:
+
+\begin{align}
+    \text{precision} &= \frac{tp}{tp + fp}\\
+    \text{recall} &= \frac{tp}{tp + fn},
+\end{align}
+where $tp$ is the number of true positive classifications, $fp$ the number of false positives and $fn$ the number of false negatives. Since precision and recall, and accuracy for that matter, are dependent on the classification threshold, we use area under the precision-recall (PR) curve as a measure that is independent of the threshold. The area under the PR-curve is also known as average precision (AP).
+
+In the following, we assume all ``raw'' light curves to be median normalized, and each light curve segment to be obtained from splitting this median normalized light curve into parts. The first preprocessing step we take is centering the light curve segments by subtracting 1.  Additionally, we investigate the effect of scaling the light curves by their estimated noise level $\sigma$, so the network performance becomes less dependent on this noise and instead more on the transit depth relative to this noise. We will refer to this as sigma scaling.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.5\linewidth]{Experiments/Figures/Preprocessing/preprocessing_lcsim_valid.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-scaling_lcsim}
+    \includegraphics[width=0.7\linewidth]{Experiments/Figures/Preprocessing/input-range-example.pdf}
+    \caption{(Left) Two segments are taken from a ``raw'' median normalized light curve, which have considerably different flux ranges after preprocessing. (Middle) Taking the derivative solves the problem of different input ranges, while conserving all relevant information. (Right) With loss of information, one could carefully remove large-scale trends in the light curve, using the red trend line in the top-left panel, to achieve a similar result.}
+    \label{fig:input_ranges}
+\end{figure}
+
+Still, the range of flux values might greatly vary between two separate light curve segments, as illustrated in Figure \ref{fig:input_ranges}. This is understood by realizing that the original light curve may contain large-scale fluctuations due to stellar rotation modulation. The network might interpret these range differences as indicators of the presence of a transit signal, in particular if there is little data available for a certain range of flux values. This is not what we want, because a transit event can occur at any given time, independent from the activity on the stellar surface. Applying median normalization again to the segments is not a solution, because then we prevent the network to learn to deal with input ranges it would normally encounter in full-length light curves. An alternative which avoids this problem, is to take the derivative of the input light curve and feed it to the network instead of the absolute values.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\linewidth]{Experiments/Figures/Preprocessing/lcsim1500_AP_pp-basic.pdf}
+    \caption{The average precision of the RNN evaluated at different transit depth bins for different basic preprocessing steps. At larger depths, the AP is expected to be higher. The right figure shows the deviations from the mean of all curves. Filled regions, which are narrow in this figure, show one standard deviation over the results of three differently initialized networks applied to the LCSim-1500 test split.}
+    \label{fig:lcsim_pp_basic}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.75\linewidth]{Experiments/Figures/Preprocessing/preprocessing_lilith_valid_2.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-scaling_lilith}
-\end{figure}
-
-In both cases however, the range of flux values might still greatly vary between two separate light curve segments. This is understood by realizing that the original light curve may contain large-scale fluctuations due to stellar rotation modulation. The network might interpret these range differences as indicators of the presence of a transit signal, in particular if there is little data available for a certain range of flux values. This is not what we want, because a transit event can occur at any given time, independent from the activity on the stellar surface. This potential problem is visualized in Figure \ref{fig:preprocessing-ranges}.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\linewidth]{Experiments/Figures/Preprocessing/prepocessing_ranges_example.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-ranges}
-\end{figure}
-
-We consider two approaches to resolve this issue: (i) feed the differences between flux values to the network, instead of their absolute values, and (ii) remove large-scale patterns from the original light curve, a process we will refer to as low-risk detrending (LRD). Both approaches have the desired effect of making the input ranges more consistent, with some exceptions. The benefits of (i) are that this approach can be applied to the segments directly and we lose almost no information by doing so. However, although all the information is still there, the structure of the data is completely changed which might be difficult for the network to learn. For (ii), we need to alter the original light curve prior to splitting it into segments. By doing so we lose information, but the result is more intuitive than (i).
-
-In Figure \ref{fig:preprocessing-general_lilith} we compare the effect of several different preprocessing steps on the performance of the network trained on Lilith-4 data. In addition to the ``basic preprocessing'' and the ``low-risk detrending'' as described above, several other approaches are included in the comparison. For example, ``high-risk detrending'' means the input light curves are detrended such that both large and short-scale patterns are removed. This is referred to as high-risk as it comes with more risk of partly removing transit signals. The detrending filter we use for this is a time-windowed median filter with a window of 12 hours. Since real-world data may include outliers, we also evaluate the effect of removing these from the data. Outliers are identified after the light curve is detrended with a time-windowed median filter with a window of 30 minutes. Positive outliers at more than 6 standard deviations from the median and negative outliers at more than 12 standard deviations from the median are removed from the original light curve. The detrending step and the low negative-outlier threshold are to avoid transit signals from being flagged s outlier. Lastly, since Lilith-4 provides centroid data, which we also have access to for real-world data, we test the effect of using these as additional input to the network. This means that the network input at each time step consists of three values: the flux, and two values that specify the pointing of the telescope at that time step. Before use, we center the centroid data around zero, and scale them similarly to their corresponding light curve. Subsequently all the centroids in the data set are standardized independently from the flux values. This way of preprocessing is to ensure that the relative scale between light curves and their corresponding centroid data is not altered, as this might contain relevant info for the network. The series of centroid data are split into segments together with their corresponding light curve.
-
-The results show that outlier removal had a negative influence on the performance of the network. This was unexpected, because outliers are not expected to carry relevant information. After all, an outlier should be present regardless of whether a transit event is occurring, unless the transit itself is flagged as outlier. This is unlikely to be the case, as we observe worse performance for both deep and shallow transits. We expect therefore that the reason for this result lies in the fact that outlier removal creates missing data. Missing values were imputed for this experiment, which might have caused the network to perform worse in this case. All other preprocessing steps seem to produce similar results. This is noteworthy, as the network therefore does not have to rely high-risk detrended data, as opposed to other common detection methods. 
-
-Lastly, since Figure \ref{fig:preprocessing-general_lilith} does not clearly indicate whether or not using centroid data is beneficial, we take into consideration the results obtained on the validation set created from Lilith-4. These results, shown in Figure \ref{fig:preprocessing-general_lilith_valid}, do indicate a potential benefit of including the centroids as input to the network. This motivated us to adopt LRD as standard preprocessing procedure in combination with using centroid inputs when applying our network to Lilith-4 data in following experiments. 
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.65\linewidth]{Experiments/Figures/Preprocessing/test_lilith_pp.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-general_lilith}
+    \includegraphics[width=\linewidth]{Experiments/Figures/Preprocessing/gap_examples.pdf}
+    \caption{An example from the LCSim-1500-Gap validation split, with different approaches to dealing with gaps and the corresponding PTS of the RNN. The signal data points are indicated by orange. Zero-filling in this example translates to one-filling, because the light curve segments are centered around zero before passing them to the RNN.}
+    \label{fig:gap_examples}
 \end{figure}
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.65\linewidth]{Experiments/Figures/Preprocessing/validation_lilith_pp.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-general_lilith_valid}
+    \includegraphics[width=0.35\linewidth]{Experiments/Figures/Preprocessing/generative-rnn_predictions.pdf}
+    \caption{The predicted flux values in red and green from the bidirectional generative RNN corresponding to the right-most figure in Figure \ref{fig:gap_examples}. The network seems to follow an expected trend in both directions, however, the gaps are not filled in a satisfactory manner.}
+    \label{fig:generative_preds}
 \end{figure}
 
-Lastly, we address the problem of missing data in greater depth. Lilith-4 data already contains data gaps, which we filled by linear interpolation up to this point, unless stated otherwise. For LCSim light curves, we manually inject NaN values in the pre-generated light curve segments to simulate data gaps. For each data split, 35\% of the samples was injected with one large data gap ranging from 2 to 10 hours, and 15\% was injected with two large data gaps. Apart from the larger gaps, each data point was replaced by a NaN value with 2\% probability. 
+Figure \ref{fig:lcsim_pp_basic} shows the effect of these different preprocessing steps on the AP of the RNN in the task of classifying individual data points as signal or non-signal. In this figure, we can observe a small difference between using no scaling and using sigma scaling, in favor of no scaling. We found that using derivatives instead of absolutes prevents the network from learning\footnote{In an earlier iteration of this work when less complex data was used (e.g. with less stellar variability), the derivative inputs worked well. Only with increased complexity the model started to fail.}.
 
-Three different approaches to handling gaps are evaluated. In each of the approaches, we impute the data in a different way. First, we consider replacing all missing values with zeros in the centered light curve segment. This is equivalent to replacing missing values with ones in the non-centered light curve. In the second approach, we fill the gaps by linear interpolation. When doing this, we linearly interpolate the trend of the light curve, rather than the raw flux values at the edges of a gap. The reason why we do not use the raw flux instead, is that an extreme value or outlier next to a gap could result in an apparent jump in the flux over consecutive points if it is used for interpolation. Lastly, we use the generative network as described in Section \ref{sec:extension_gen} to fill in gaps as it steps through the light curve. An example of each of the approaches is visualized in Figure \ref{fig:preprocessing-gap_examples}. 
+To deal with gaps, we compare two gap-filling approaches and the use of the generative RNN. The gap-filling approaches are simple and are not aimed to reconstruct the original light curve, but rather produce an input that the RNN can handle well. Figure \ref{fig:gap_examples} visualizes how each approach works, and Figure \ref{fig:generative_preds} visualizes the predictions of the generative RNN applied to the same example. Since we use a bidirectional RNN, we get two streams of predictions. We can see from the figures that this creates some unrealistic artefacts in the predicted curve, which is likely the cause for the bumped peak in the PTS of the generative RNN. Therefore unexpectedly, we found that the generative network slightly outperformed the other two approaches when applied to a larger data set, especially for the shallowest transit signals. The results are plotted in Figure \ref{fig:lcsim_gaps}. The second best approach tested was linear interpolation, and the worst was zero-filling. In terms of efficiency, however, linear interpolation is preferred over the generative RNN. This is because during training, the generative RNN needs to evaluate at each time step whether the data point is missing, and if so, replace it with its own prediction before it proceeds to the next time step. This, in combination with the fact that we could not use pre-implemented RNN architectures in PyTorch for this purpose, resulted in an increase of training time of more than five times compared to the standard RNN applied to linearly interpolated data.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\linewidth]{Experiments/Figures/Preprocessing/gaps_example.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-gap_examples}
+    \includegraphics[width=0.7\linewidth]{Experiments/Figures/Preprocessing/lcsim1500_AP_pp-gaps.pdf}
+    \caption{The average precision for varying transit depths, with filled regions indicating the standard deviation of three runs on the test split of LCSim-1500-Gap with differently initialized networks. The comparison includes different methods to deal with data gaps: filling gaps with zeros, linear interpolation, or using predictions from the generative RNN.}
+    \label{fig:lcsim_gaps}
 \end{figure}
 
-The generative network seems to work as intended by inspecting Figure \ref{fig:preprocessing-gap_examples}. We can take a closer look at what this network is doing in Figure \ref{fig:preprocessing-generative_example}. The network is bidirectional, so we get two streams of predictions. We can see that these can complement each other. If we only consider the predictions from left-to-right in the first gap and from right-to-left in the second, then the missing values are well reconstructed. However, since each unidirectional component of the network has no information of what comes after a gap, we see the predictions drift off to unrealistic values.
+In Figure \ref{fig:lilith_pp_basic}, we evaluate a subset of the same preprocessing steps applied to the Lilith-1500 data set. In the shallow transit range, each network's AP lies relatively close to each other. Towards the deepest transits, it seems that sigma scaling is beneficial for this data set. From the figure, however, it also seems that zero-filling is the better approach to deal with data gaps, in contrast to our earlier results.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.34\linewidth]{Experiments/Figures/Preprocessing/generative_example.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-generative_example}
+    \includegraphics[width=0.8\linewidth]{Experiments/Figures/Preprocessing/lilith1500_AP_pp-basic-gaps.pdf}
+    \caption{The effect of different basic preprocessing steps on the performance of the RNN applied to Lilith light curve segments. Filled regions indicate the standard deviation over three runs using differently initialized models that were applied to the test split after training.}
+    \label{fig:lilith_pp_basic}
 \end{figure}
 
-After evaluation on the gap-injected test set, of which the results are presented in Figure \ref{fig:preprocessing-gaps_lcsim}, we find that each approach to handling gaps leads to similar network performance in terms of TPR, at the same value for TNR. However, on average linear interpolation seems to work slightly better than the other approaches, which we therefore use in following experiments.
+Lastly, we evaluate additional preprocessing steps applied to Lilith light curves. First of all, to address the problem illustrated in Figure \ref{fig:gap_examples}, we detrend the original light curves (before segmenting) with a filter that only removes the largest trends. We refer to this as low-risk detrending (LRD). For this, a Savitzky-Golay filter was used with a polynomial order of 2 and a window length of 2881, i.e. $\sim$4 days (see \cite{hippke2019wotan} for details on the Savitzky-Golay filter). We also test the effect of detrending the original light curve with a filter that would more commonly be used in combination with other search algorithms. We refer to this as high-risk detrending (HRD). For this, a time-windowed sliding median filter was used with a window length of 12 hours. Finally, since Lilith provides centroid data, we investigate the effect of using the centroids as additional input to the network at each time step. The results shown in Figure \ref{fig:lilith_pp_advanced} suggest that both LRD and centroid inputs are beneficial to the network, although there is some overlap between different runs. In the mid-range of transit depths, LRD and centroid inputs seem to be consistently better than other methods. It should be marked that using an HRD filter did not improve the results, especially in the deeper transit range, which underlines our claim that the RNN does not require its inputs to be cleared of short scale time dependent noise in order to do its task.
 
+In each of the following experiments, we make use of sigma scaling and linear interpolation to deal with gaps.
 \begin{figure}
     \centering
-    \includegraphics[width=0.65\linewidth]{Experiments/Figures/Preprocessing/pp_gaps_lcsim.png}
-    \caption{\todo{caption}}
-    \label{fig:preprocessing-gaps_lcsim}
+    \includegraphics[width=0.7\linewidth]{Experiments/Figures/Preprocessing/lilith1500_AP_pp-advanced.pdf}
+    \caption{\todo{outliers} The effect of high- and low-risk detrending, and centroid inputs on the AP of the RNN, in comparison with only using basic preprocessing, i.e. sigma scaling, linearly interpolating data gaps. The results are obtained on the test set of Lilith-1500, with standard deviations over three runs indicated by the filled regions. }
+    \label{fig:lilith_pp_advanced}
 \end{figure}

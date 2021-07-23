@@ -1,21 +1,87 @@
 
-\section{Recurrent Neural Network (RNN)}
-\todo{write short section introduction; include more RNN-related work (e.g. signal detection in ECG data)}
+\section{Recurrent neural network (RNN)}
 
-\subsection{Application to exoplanets}
-In a task that resembles detection, \cite{hinners2018machine} compared a bi-LSTM with a feature engineering approach. Among other tasks, the task was to predict the number of transits present in a given light curve. Their bi-LSTM model produced near-random results. Other tasks included the prediction of parameters of the star given its light curve. They address the problem of the RNN-based model could be due to the fact that their data set was imbalanced. However, we note that it might have been due to the sparse learning signal that is given to the RNN. Namely, only after having seen about 7000 input data points, the RNN receives one learning signal over its single output value. This way, figuring out where transit signals are present in a given light curve can only be implicitly learned by the model, while we can also explicitly provide this information as learning signal at every time step. This idea has motivated us to develop the RNN-based transit detection algorithm presented in this work, which is further described in Chapter \ref{chap:methodology}. 
+\subsection{Theory}
 
-In another work utilizing LSTMs, \cite{morvan2020detrending} show the successful application of LSTMs for detrending. The model was trained to learn out-of-transit patterns, and interpolate these within the duration of a given transit signal. By doing so, the background signal could be better subtracted from the signal, and thus the transiting planet better characterized. Results improved if centroid data was included.
+\noindent The field of machine learning covers a broad range of techniques and methods, e.g. k-nearest neighbours, decision trees, linear regression. A subfield of machine learning is deep learning, which is based on artificial neural networks (NNs) such as the RNN and CNN. A simple NN architecture is the multilayer perceptron (MLP), which is a network consisting of fully-connected (FC) layers of computational units called neurons. The output at each layer $h_{i} \in \mathbb{R}^{n}$ in an MLP can be obtained by transforming the preceding layer $h_{i-1} \in \mathbb{R}^{m}$ as:
+\begin{equation}
+    h_{i} = \phi(W_{i-1,i} h_{i-1} + b_{i}),
+\end{equation}
+where $W_{i-1,i} \in \mathbb{R}^{n \times m}$ is the weight matrix between layers $i-1$ and $i$ and $b_{i} \in \mathbb{R}^n$ the bias vector. $\phi(\cdot)$ is the activation function, which is used to introduce non-linearities in the network. Between layers, $\phi(\cdot)$ is often chosen to be the ReLU activation function, i.e. $\phi(a) = \text{ReLU}(a)$, where
+\begin{equation}
+    \text{ReLU}(a) = \max (0, a).
+\end{equation}
 
-\subsection{Application to variable stars}
-Remaining literature mostly focuses on light curve classification, in general for variable stars. For example, \cite{jamal2020neural} compare different neural network architecture for this task, including dilated temporal convolutional networks (dTCNs), LSTMs, GRUs, temporal convolutional NNs (tCNNs) and encoder-decoder models. The LSTM and tCNN were found to be performing best, with the latter having the benefit of shorter computation times. 
+The network's output $y$ for a given input $X \in \mathbb{R}^N$ is given by the function $y = g(X, W)$, which represents the neural network. In this notation, we use $W$ to refer to the collection of all weight and bias parameters in the network. For example, for an MLP with one hidden layer we have  
+\begin{equation}
+    \label{eq:mlp_function}
+    g(X, W) = \psi(W_{1,2} (\phi(W_{0,1} X + b_{0})) + b_{1}),
+\end{equation}
 
-\cite{naul2018recurrent} address the problem of irregularly sampled data in light curves by including time intervals between measurement as input to an RNN encoder. The RNN is used for variable star classification. \cite{becker2020scalable} also experiments with time intervals between measurements as input to the model, and instead of using the raw flux they also use the differences between subsequent flux values as input. To reduce computational requirements, they adopted a sliding window approach over the input light curve, of which each window is used seperately to train the RNN. While most works employ a bidirectional RNN, in this work a unidirectional RNN was used to allow for its application in an online fashion.
+\noindent where, for example, in the case of binary classification, the output $y \in \mathbb{R}$ is mapped between 0 and 1 by choosing 
+$\psi(a) = \sigma(a)$, where $\sigma(a)$ is the logistic sigmoid function given by
+\begin{equation}
+    \sigma(a) = \frac{1}{1+\exp(-a)}.
+\end{equation}
 
-% \cite{tsang2019deep} jointly train an RNN with an autoenconder to reconstruct and classify variable star light curves. They use a Gaussian mixture model to detect novel light curves.
+For an RNN, the network function, say $f(X,W)$, becomes more complicated. This is because an RNN uses each element $x_j$ in $X$ to update its hidden state recursively. Consider $X$ to be a time series, so we can speak of individual time steps $j$ with corresponding data points $x_j$. The hidden state $h_{j} \in \mathbb{R}^K$ of the ``vanilla''-RNN at time step $j$ is given by
+\begin{equation}
+    \label{eq:vanilla_rnn}
+    h_{j} = \phi(U h_{j-1} + V x_j + b),
+\end{equation}
 
-\subsection{Anomaly detection}
-Transit signals can be seen as anomalies in time series of ``normal'' stellar behaviour. LSTMs have been used to detect anomalies in time series in an unsupervised learning approach by \cite{malhotra2015long}. In this case, the LSTM is trained to predict the normal data and the errors on the predictions are used to threshold the detection of an anomalous event. If the LSTM is trained to predict multiple steps into the future, the same approach can be used to detect collective anomalies \citep{bontemps2016collective}, for example transit signals which generally cover multiple data points. However, as \cite{cherdo2020training} noted, this `unsupervised' approach to using LSTMs for anomaly detection still requires training on normal data, i.e. we need to know beforehand which data is clear of anomalous events. In our case, we might never be fully sure to whether a light curve is clear of transit signals, e.g. small and previously unseen signals might still be hidden in the data. Training the model to treat these light curves as ``normal'' data, might seriously harm the ability of the model to detect the smallest transit signals. For our purposes, we therefore turn to the supervised approach, as we can utilize both the transit signals from known exoplanets as well as realistically simulated signals as inputs to our model. 
+\noindent where $U \in \mathbb{R}^{K \times K}$ and $V \in \mathbb{R}^{K \times N}$ are weight matrices and $b \in \mathbb{R}^{K}$ the bias vector, which are the same for each time step. An output for each time step can be obtained by applying some function to $h_{j}$. For example, we can apply Equation \ref{eq:mlp_function} to the hidden states of the recurrent layer to obtain an output $y_j$ for each time step $j$, i.e. $y_j= g(h_{j}, W)$. The complete RNN then outputs a vector $Y \in \mathbb{R}^N$ with elements $y_j$ for an input sequence $X$, i.e. $Y = f(X, W)$.
 
-\subsection{Irregularly-sampled time series}
-Although attempts have been made to handle irregularly sampled time series using RNNs for variable star classificiation, developments within AI can provide different perspectives on the problem. Not related to variable stars but related to handling irregular time series using RNNs, is the ODE-RNN \cite{rubanova2019latent}. This model design, inspired by \cite{chen2018neural}, treats time as continuous, whereas the standard RNN treats time as discrete steps. The ODE-RNN can handle arbitrary time gaps between observations, which could be useful for our purposes. However, this comes at the cost of a required altering of the training process as opposed to using a standard RNN, in which batched training does not come straightforward. Moreover, the benefits of the ODE-RNN are most profound if the sampled data is sparse. With transit durations in the order of hours and a observation cadence in the order of minutes, this is generally not the case. For this reason, we rely on the standard RNN architectures in this work, and leave the application of ODE-RNNs for exoplanet science for future work.
+Equation \ref{eq:vanilla_rnn} represents the update rule for a unidirectional RNN, i.e. an RNN which only propagates through time in one direction. However, in some applications it is beneficial to utilize information form both directions in time. This can be achieved by concatenating the hidden states of two RNN components, propagating though the input in opposite directions:
+\begin{equation}
+    H_j =  
+    \begin{bmatrix}
+        h_j \\
+        h_j'
+    \end{bmatrix} =
+    \begin{bmatrix}
+        \phi(U h_{j-1} + V x_j + b) \\
+        \phi(U' h'_{j+1} + V' x_j + b')
+    \end{bmatrix}.
+\end{equation}
+$h'_j$ is of the same dimensionality as $h_j$ and is obtained using weight matrices $V'$ and $W'$ and bias vector $b'$, which are of the same dimensionality as $V$, $W$, $b$. The result, $H_j \in \mathbb{R}^{2K}$, can be used in the same way as before, e.g. $y_j= g(H_{j}, W)$.
+
+The key to a well-performing network is not only to have an appropriate network architecture, but also to have a good training procedure. A network is trained by updating its trainable parameters $W$ to optimize for a given loss function $\mathcal{L}$. To do so, generally the derivative of $\mathcal{L}$ is taken with respect to $W$ with a process called ``backpropagation'', which efficiently computes the gradient at each layer using the chain rule. The derivative can be used to update $W$ in the direction of a lower loss value, for example using (stochastic) gradient descent or more advanced optimization algorithms such as Adam \citep{kingma2014adam}.
+
+A problem may occur, however, if the network has many layers. Since the gradient of the first layer in the network is computed using the chain rule, i.e. by multiplying the gradients of all subsequent layers, we may have that the gradients quickly explode or vanish. For a vanilla-RNN this is problematic, because the gradient is propagated through time, in which we treat each time step in the RNN as a separate layer. Suppose that the input $X$ consists of 1000 data points. Even if the gradients of each individual layer lie around 0.9, then the gradients of the loss with respect to the weights of the first layer can get as low as $0.9^{1000}\approx10^{-46}$. This means that earlier time steps will contribute very little to the weight update, and the RNN will not be able to learn long term dependencies.
+
+For this reason, different RNN architectures have been proposed. Several proposed RNN architectures use gates to better control the flow of information. One of these is the long short-term memory (LSTM, \cite{hochreiter1997long}) RNN. For LSTM, Equation \ref{eq:vanilla_rnn} can be replaced by the following\footnote{\url{https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html}}: 
+\begin{align}
+    i_j &= \sigma(W_{ii}x_j + b_{ii} + W_{hi}h_{j-1} + b_{hi}) \\
+    f_j &= \sigma(W_{if}x_t + b_{if} + W_{hf}h_{j-1} + b_{hf}) \\
+    g_j &= \tanh(W_{ig}x_j + b_{ig} + W_{hg}h_{j-1} + b_{hg}) \\
+    o_j &= \sigma(W_{io}x_j + b_{io} + W_{ho}h_{j-1} + b_{ho}) \\
+    c_j &= f_j \odot c_{j-1} + i_j \odot g_j \\
+    h_j &= o_j \odot \tanh(c_j),
+\end{align}
+where  $\odot$ is the element-wise product. The gates $i_j$, $f_j$, $g_j$, $o_j$ are known as the input, forget, cell and output gates respectively, and $c_j$ is known as the cell state. 
+
+Another, yet similar, architecture is the gated recurrent unit (GRU, \cite{cho2014learning}) RNN. For GRU, Equation \ref{eq:vanilla_rnn} can be replaced by the following\footnote{\url{https://pytorch.org/docs/stable/generated/torch.nn.GRU.html}}:
+\begin{align}
+    r_j &= \sigma(W_{ir}x_j + b_{ir} + W_{hr}h_{j-1} + b_{hr}) \\
+    z_j &= \sigma(W_{iz}x_j + b_{iz} + W_{hz}h_{j-1} + b_{hz}) \\   
+    n_j &= \tanh(W_{in}x_j + b_{in} + r_t \odot (W_{hn}h_{j-1} + b_{hn})) \\
+    h_j &= (1 - z_j) \odot n_j + z_j \odot h_{j-1},
+\end{align}
+
+\noindent where the gates $r_j$, $z_j$, $n_j$ are known as reset, update and new gates respectively. GRU has fewer gates and thus fewer parameters than LSTM.
+
+\subsection{Applications}
+
+RNNs seem to be missing from literature concerning transit detection. They have been applied in related tasks, for example to predict stellar parameters or the number of potential transit signals, given a light curve \citep{hinners2018machine}. In the latter, however, the bidirectional LSTM (bi-LSTM) only achieved near-random results, which the authors attributed to the imbalance in the data. We note that it might also have been due to the sparse learning signal that is given to the RNN. Namely, only after having seen about 7000 input data points, the RNN outputs a single classification vector or value, for which a learning signal is given. This way, figuring out where transit signals are present in a given light curve can only be learned implicitly by the model, even though we have the possibility to provide this information as learning signal at every time step.
+
+Another application of the RNN is that of detrending light curves \citep{morvan2020detrending}. An LSTM was trained to learn out-of-transit patterns, and interpolate these within the duration of a given transit signal. By doing so, the authors show that the background of a transit signal can be better subtracted, which allows for better characterization of the exoplanet. Results improved if centroid data was included.
+
+Other applications of RNN mostly involve the classification of light curves as a whole, for example for the classification of variable stars. \cite{jamal2020neural} compare different neural network architecture for this task, including dilated temporal convolutional networks (dTCNs), LSTMs, GRUs, temporal convolutional NNs (tCNNs) and encoder-decoder models. The LSTM and tCNN were found to be performing best, with the latter having the benefit of shorter computation times. 
+
+In the context of variable star classification, the problem of irregularly time series in addressed by \cite{naul2018recurrent}. To deal with this problem, time intervals between measurements are used as additional input to the RNN. \cite{becker2020scalable} also experiment with time intervals between measurements as inputs to their model, and additionally use differences between flux values as inputs instead of their raw values. They used GRU over LSTM, because of its roughly similar performance, but lower computational requirements. Within machine learning literature, other methods have been proposed to deal with irregularly sampled time series. One of these methods is the ODE-RNN \citep{rubanova2019latent, chen2018neural}, which is an RNN based on ordinary differential equations, which allow time to be treated as continuous instead of discrete. Although this architecture seems beneficial for our purposes, it comes at the cost of altering of the training process as opposed to using a standard RNN, in which batched training does not come straightforward. Moreover, the benefits of the ODE-RNN mostly come forward if the sampled input data is sparse. In the task of transit detection, however, this is not the case as we generally have transit durations in the order of hours and an observation cadence in the order of minutes.
+
+Unrelated to exoplanet science or light curves, several works investigate the use of RNNs for the detection of signals in time series. For example, LSTMs have been used to detect anomalies in time series in an unsupervised learning approach \citep{malhotra2015long}. The RNN is trained to predict subsequent steps of ``normal’’ data, which is clear of anomalies, and a deviation from the predictions is considered as anomaly. The same approach can be used to detect collective anomalies \citep{bontemps2016collective}, i.e. anomalies that cover multiple data points. Transit signals can be seen as collective anomalies in time series dominated by ``normal’’ stellar activity. However, as noted by \cite{cherdo2020training}, this ``unsupervised’’ approach still requires knowing which light curves are clear of anomalies. We may never know for sure if a light curve is clear of transit signals, but in some cases we do know for sure whether a transit signal is present. Therefore, we expect a supervised learning approach to be better suited for our task.
+\todo{confidence estimation}
+
+
