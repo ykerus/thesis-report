@@ -1,26 +1,69 @@
 
 \section{Data simulations}
 
-For the development and evaluation of our RNN-based algorithm we used simulated data. This is because simulated data comes with an absolute ground-truth of the hidden signals, and for the development of the algorithm it showed useful to be in control over the parameters of the input light curves. Two sources of data were used. First, we made use of a light curve simulator that was specifically designed for this work. We refer to this simulator and its produced data as LCSim. Second, we made use of simulated light curves in the Lilith-4 data set, which was produced by the Lilith data simulator of the TESS pipeline. The following subsections describe the details of the simulations and some general preprocessing of the data.
+For the development and evaluation of our RNN-based algorithm we used simulated data. This is because simulated data comes with an absolute ground-truth of the hidden signals, and for the development of the algorithm it showed useful to be in control over the parameters of the input light curves. Two sources of data were used. First, we made use of a light curve simulator that was specifically designed for this work. We will refer to this simulator LCSim. Second, we made use of simulated light curves in the Lilith-4 data set, which was produced by the Lilith data simulator of the TESS pipeline. The following subsections describe the details of the simulations, the data sets used in this work, and some general preprocessing of the data.
 
 \subsection{LCSim}
 \label{sec:lcsim}
 
 In line with TESS data, we adopt a 2-minute cadence for all simulations in this work. The simulator, made available here\footnote{\url{https://github.com/ykerus/transit-detection-rnn15}}, may also be used to generate 30-minute cadence light curves, to obtain light curves that are closer to Kepler data. 
 
-Stellar variability is simulated using Gaussian process (GPs). GPs have been used several times in literature to account for background activity in light curves, both for characterizing and simulating stellar activity \citep{barros2020improving, zucker2018shallow}. GPs are defined by a mean and covariance function, or kernel. In our case, the mean function is always 1, so the behaviour is fully determined by the kernel, which should therefore hold all of the star's relevant properties. An instance of the function representing stellar variability can be obtained by sampling from the multi-dimensional Gaussian distribution that is defined by the mean and covariance function. However, if we use the same kernel for each sample, then each light curve have the same underlying stellar properties. Therefore, we construct a kernel for each light curve. For the construction of kernels that are able to simulate quasi-periodic behaviour as observed in stars, we make use of the Python library \texttt{celerite} \citep{foreman2017fast}. \texttt{celerite} has built-in kernels to simulate stellar granulation and rotation modulation. 
-\todo{briefly describe parameters and what they mean}
+Stellar variability is simulated using Gaussian process (GPs). GPs have been used several times in literature to account for background activity in light curves, both for characterizing and simulating stellar activity \citep{barros2020improving, zucker2018shallow}. GPs are defined by a mean and a covariance function, or kernel. In our case, the mean function is always 1, so the behaviour is fully determined by the kernel, which should therefore hold all of the star's relevant properties. An instance of the function representing stellar variability can be obtained by sampling from the multi-dimensional Gaussian distribution that is defined by the mean and covariance function. However, if we use the same kernel for each sample, then each light curve have the same underlying stellar properties. Therefore, we construct a kernel for each light curve. For the construction of kernels able to simulate quasi-periodic behaviour as observed in stars, we make use of the Python library \texttt{celerite} \citep{foreman2017fast}. \texttt{celerite} has built-in kernels to simulate stellar granulation and rotation modulation. These kernels are specified by the standard deviations and time scales of the processes, among several other parameters which are given in Table \ref{tab:params}.
 
-To simulate photon noise, we simply sample from a Gaussian distribution $\epsilon_{ij} \sim \mathcal{N}(0, \sigma_i)$ and add $\epsilon_{ij}$ to the corresponding flux at time step $j$ in light curve $i$. The standard deviation $\sigma_i$ defines the level of time independent noise in the light curve, and is specified for each light curve separately.
+To simulate photon noise, we sample from a Gaussian distribution $\epsilon_{ij} \sim \mathcal{N}(0, \sigma_i)$ and add $\epsilon_{ij}$ to the corresponding flux at time step $j$ in light curve $i$. The standard deviation $\sigma_i$ defines the level of time independent noise in the light curve, and is specified for each light curve separately.
 
-For the simulation of transit signals, we made use of the Python library \texttt{batman} \citep{kreidberg2015batman}, which is based on the equations from \cite{mandel2002analytic} which describe the physics of transits. Several parameters need to be specified to obtain the transit signals of a single planets, see Table \ref{tab:params}. \todo{add table of parameter distributions}. We approximate the stellar limb darkening effect with a quadratic function, parametrized by $u_1$ and $u_2$. \todo{give quadratic function, and constraint sampling distributions}. We constrained the orbital period $P$ of a planet and its semi-major axis $a$ according to Kepler's Third Law (see Section \ref{transit}). However, in order to do so, the stellar mass $M$ and radius $R$ also need to specified so the result is compatible with the input requirements of \texttt{batman}. The orbital inclination $i$ is assumed to be 90$^\circ$ for all planets we simulate, to avoid problems with non-existent transit signals, or transit depths that are more difficult to predict. Basically, setting $i=90^\circ$ ensures that a simulated planet moves in front of the stellar disk during transit.
+For the simulation of transit signals, we made use of the Python library \texttt{batman} \citep{kreidberg2015batman}, which is based on the equations from \cite{mandel2002analytic} which describe the physics of transits. We approximate the stellar limb darkening effect with the built-in quadratic function, parametrized by $u_1$ and $u_2$. The values for these parameters were sampled such that they always produce physical transit signals, according to \cite{kipping2013efficient}. We constrained the orbital period $P$ of a planet and its semi-major axis $a$ according to Kepler's Third Law (see Section \ref{sec:transit}). However, in order to do so, the stellar mass $M$ and radius $R$ also need to specified so the result is compatible with the input requirements of \texttt{batman}. The orbital inclination $i$ is assumed to be 90$^\circ$ for all planets we simulate, to avoid problems with non-existent transit signals, or transit depths that are more difficult to predict. Setting $i=90^\circ$ ensures that a simulated planet moves in front of the stellar disk during transit. The eccentricity is sampled from a Beta distribution, following \cite{kipping2013parametrizing}.
 
-In case a light curve is required to have transit signals from two different planets, the transit simulator is simply called twice with different parameters for the planets while maintaining all the parameters belonging to the star. The result might be that the two planets coincidentally have the same distance from their host star, which would be unrealistic, but does not pose a problem for the aims of this thesis. Overlapping transit signals, on the other hand, could make the process of developing and evaluating our detection algorithm more difficult. If overlapping signals have been found, one needs to make sure which signal triggered a detection: it could be one of the two, or both. Since overlapping signals are far less common in real-world data than non-overlapping signals, we only simulate non-overlapping transit signals in this work to avoid confusion.
+In case a light curve is required to have transit signals from multiple different planets, the transit simulator is simply called iteratively with different parameters for the planets while maintaining all the parameters belonging to the star. The result might be that the two planets coincidentally have the same distance from their host star, which would be unrealistic, but does not pose a problem for the purpose of this thesis. Overlapping transit signals, on the other hand, could make the process of developing and evaluating our detection algorithm more difficult. If overlapping signals have been found, one needs to make sure which signal triggered a detection: it could be one of the two, or both. Since overlapping signals are far less common in real-world data than non-overlapping signals, we only simulate non-overlapping transit signals in this work to avoid confusion.
 
-\todo{describe parameter sampling}
-\todo{describe data sets used in experiments and preprocessing}
+Several data sets used in this work are based on LCSim. LCSim-1500 is a set of light curve segments consisting of $N=1500$ data points per light curve, which is used for training and evaluating the network. LCSim-500 is similar, only it has with fewer ($N=500$) data points per light curve. Both data sets contain 15000 training samples, 5000 validation samples and 5000 test samples. Half of the samples per split contains no transit signals, 35\% contains a single transit signal and 15\% two transit signals. For the evaluation of our method's ability to retrieve signals in full-length light curves, we use LCSim-Mono and LCSim-Single. Both data sets consist of 5000 light curves spanning 27.4 days (i.e. $\sim$20000 data points per light curve). 50\% of the samples in LCSim-Mono contain a single transit signal, and 50\% of the samples in LCSim-Single contain at least three transit signals from a single transiting planet. None of these data sets contain data gaps. However, to evaluate the effect of gaps and different gap-handling approaches, we use LCSim-1500-Gap, which is LCSim-1500 with injected gaps. Zero, one or two large gaps between 2 and 10 hours are injected with 50\%, 35\% and 15\% probability respectively. In addition, a random selection of 2\% of the data points is removed.
+
+%\cdashlinelr{1-4}
+
+
+\begin{table}[]
+\centering
+\begin{tabular}{@{}llll@{}}
+\toprule
+                      &  Parameter               & Sampling distribution or relation                           & Units            \\ \midrule
+Photon noise          & $\sigma$        & $\exp(\text{Uniform}(\log(0.0005), \log(0.003)))$           & -                \\ \cdashlinelr{1-4}
+\multirow{5}{*}{\begin{tabular}[c]{@{}l@{}}Stellar\\ rotation\end{tabular}} &
+  $Q_0$ &
+  $\text{LogNormal}(0, 2)$ &
+  - \\
+                      & d$Q$            & $\text{LogNormal}(0, 2)$                                    & -                \\
+                      & $f$             & $\text{Uniform}(0.1, 1)$                                    & -                \\
+                      & $P_{rot}$       & $|\text{Normal}(5,2)| + 1$                                  & days             \\
+                      & $\sigma_{rot}$  & $\exp(\text{Uniform}(\log(0.0003), \log(0.005)))$           & -                \\\cdashlinelr{1-4}
+\multirow{4}{*}{\begin{tabular}[c]{@{}l@{}}Stellar \\ granulation\end{tabular}} &
+  $\nu$ &
+  $\text{LogNormal}(4.5,1) / 10^{-6}$ &
+  Hz \\
+                      & $P_{gran}$      & $1/\nu/86400$                                               & days             \\
+                      & $\sigma_{gran}$ & $\text{LogNormal}(\log(\num{2e-6} \cdot \nu^{-0.61}), 0.1)$ & -                \\
+                      & $Q$             & $1/\sqrt{2}$                                                & -                \\ \cdashlinelr{1-4}
+\multirow{5}{*}{Star} & $M$             & $|\text{Normal}(0.9, 0.25)| + 0.1$                          & $\text{M}_\odot$ \\
+                      & $R$             & $|\text{Normal}(M^{1/3}-0.1, 0.2)| + 0.1$                   & $\text{R}_\odot$ \\
+                      & $q_1$, $q_2$    & $\text{Uniform}(0, 1)$                                      & -                \\
+                      & $u_1$           & $2 q_2\sqrt{q_1}$                       & -                \\
+                      & $u_2$           & $(1-2q_2)\sqrt{q_1}$                                        & -                \\\cdashlinelr{1-4}
+\multirow{5}{*}{Exoplanet} &
+  $P$ &
+  $\exp(\text{Uniform}(\log(P_{min}), \log(P_{max})))$ &
+  days \\
+ &
+  $a$ &
+  $( (M \cdot \text{M}_\odot)\cdot 86400P \cdot G / (2\pi)^2 )^{1/3} / (R\cdot\text{R}_\odot)$ &
+  $R$ \\
+                      & $ror$           & $\exp(\text{Uniform}(\log(0.02), \log(0.15)))$              & -                \\
+                      & $ecc$           & $\text{Beta}(0.867, 3.03)$                                  & -                \\
+                      & $i$             & $90$                                                        & deg              \\
+                      & $w$             & $\text{Uniform}(0, 360)$                                    & deg              \\ \bottomrule
+\end{tabular}
+\caption{\todo{caption - explain inspiration and sources - refer to table in text}}
+\end{table}
 
 \subsection{Lilith-4}
 \label{sec:lilith-4}
 
-The Lilith-4 data set comprises four sectors of simulated TESS data, and takes into account readout errors, spacecraft jitter, focus errors, diffuse light, cosmic rays, stellar variability, transiting exoplanets, eclipsing binary stars, and more \citep{osborn2020rapid}. We use this data for several reasons. Firstly, it functions as a test for both our algorithm and the LCSim simulator. Unexpected results can lead us to believe that either our algorithm is too dependent on the data that is used, or that LCSim data is too unrealistic. Secondly, it allows for the evaluation of certain preprocessing steps in combination with our algorithm, that would be necessary in the case of using real-world data. Lilith-4 also includes information about the pointing of the telescope, the centroid data, which can be used by our algorithm to potentially benefit from.
+The Lilith-4 data set comprises four sectors of simulated TESS data, and takes into account readout errors, spacecraft jitter, focus errors, diffuse light, cosmic rays, stellar variability, transiting exoplanets, eclipsing binary stars, and more \citep{smith2019four}. We use this data for several reasons. Firstly, it functions as a test for both our algorithm and the LCSim simulator. Unexpected results can lead us to believe that either our algorithm is too dependent on the data that is used, or that LCSim data is too unrealistic. Secondly, it allows for the evaluation of certain preprocessing steps in combination with our algorithm, that would be necessary in the case of using real-world data. Lilith-4 also includes information about the pointing of the telescope, the centroid data, which can be used by our algorithm to potentially benefit from.

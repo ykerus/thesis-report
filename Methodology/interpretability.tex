@@ -1,5 +1,6 @@
 
 \section{Increasing interpretability with confidence estimation}
+\label{sec:rnn_conf}
 
 Although the network outputs are conveniently bounded between 0 and 1, they should not be confused with probabilities. For example, when two peaks in the PTS have the same height, we cannot say that they are equally likely to correspond to true signals. This is because the input data might be slightly different than the data seen during training, which could cause the outputs of the RNN to be less reliable. In addition to the standard outputs, it would therefore be helpful to have an estimation of confidence over the predictions to know when the network is more certain of its predictions.
 

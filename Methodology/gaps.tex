@@ -1,5 +1,6 @@
 
 \section{Handling data gaps}
+\label{sec:rnn_gen}
 
 If we naively pass a light curve with missing values through the RNN, then varying time intervals will be ignored and false detections could be triggered around gaps. One way to deal with this problem is to feed the time differences between measurements to the RNN. However, this extra stream of data might increase the chance of overfitting \todo{elaborate}. Other methods include data imputation, for example by filling missing data with linearly interpolated values.
 

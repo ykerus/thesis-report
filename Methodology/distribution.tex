@@ -1,5 +1,5 @@
 
-We want to model $p(T|X)$, where $T$ represents the targets $\{t_j\}_{j=1}^N$ for each data point $\{x_j\}_{j=1}^N$ in a given light curve $X$. A target $t_j$ is 1 if $x_j$ is part of a transit signal, otherwise it is 0. We assume that the target $t_j$ depends on all flux values through $x_j$, which is dependent on its neighbours $x_{j\pm1}$, which are dependent on their neighbours, and so on. This can be visualized by:
+The network is used to model $p(T|X)$, where $T$ represents the targets $\{t_j\}_{j=1}^N$ for each data point $\{x_j\}_{j=1}^N$ in a given light curve segment $X$. We assume the network inputs to be preprocessed such that the flux values $x_j$ can take any value, i.e. $x_j \in \mathbb{R}$. A target $t_j$ is 1 if $x_j$ is part of a transit signal, otherwise it is 0. We assume that the target $t_j$ depends on all flux values through $x_j$, which is dependent on its neighbours $x_{j\pm1}$, which are dependent on their neighbours, and so on. This can be visualized by:
 
 \begin{figure}[H]
 \centering
@@ -23,21 +23,18 @@ We want to model $p(T|X)$, where $T$ represents the targets $\{t_j\}_{j=1}^N$ fo
 \edge {xd} {td};
   }
 \end{figure}
-
 \noindent Since we observe $X$, the targets become separated in the graphical model. Therefore we model them as independent, given $X$, i.e.:
-
 \begin{equation}
     p(T|X) = p(t_1,\dots,t_N|X) = \prod_{j=1}^N p(t_j|X)
 \end{equation}
+In other words, we assume that knowing the a target $t_{k}$ at time step $k \neq j$ in addition to the flux values $X$, would not make a difference for the probability of observing $t_j = 1$, compared to only knowing $X$. Therefore, the only information we feed to the network at each time step is $x_j$.
 
-\noindent Our network outputs a value $y_j$ for each $x_j$, using the function $Y = y(X, W)$, where $W$ represents the weights of the network. $Y$ represents the collection of outputs $\{y_j\}_{j=1}^N$. We interpret $y_j$ as the conditional probability $y_j = p(t_j=1|X,W)$, such that $p(t_j=0|X,W)$ is given by $1-y_j$. The conditional distribution of targets at time step $j$ is then given by
-
+Our network outputs a value $y_j \in (0,1)$ for each $x_j$, using the function $Y = f(X, W)$, where $W$ represents the weights of the network. $Y$ represents the collection of outputs $\{y_j\}_{j=1}^N$. We interpret $y_j$ as the conditional probability $y_j = p(t_j=1|X,W)$, such that $p(t_j=0|X,W)$ is given by $1-y_j$. The conditional distribution of targets at time step $j$ is then given by:
 \begin{equation}
     p(t_j|X,W) = y_j^{t_j} (1-y_j)^{1-t_j}
 \end{equation}
 
-\noindent Given a set of independent observations $\{T_i\}_{i=1}^M$ for light curves $\{X_i\}_{i=1}^M$, we aim to maximize the likelihood $p(T|X,W)$ by updating the weights $W$ of the network. Equivalently, we can maximize the log likelihood, which is given by
-
+\noindent Given a set of independent observations $\{T_i\}_{i=1}^M$ for light curve segments $\{X_i\}_{i=1}^M$, we aim to maximize the likelihood $p(T|X,W)$ by updating the weights $W$ of the network. Equivalently, we can maximize the log likelihood, which is given by:
 \begin{align}
     \log p(T|X,W) &= \sum_{i=1}^M \log  p(T_i|X_i,W) \\
     &= \sum_{i=1}^M \log \prod_{j=1}^N p(t_{ij}|X_i,W) \\
@@ -47,16 +44,14 @@ We want to model $p(T|X)$, where $T$ represents the targets $\{t_j\}_{j=1}^N$ fo
 
 \noindent where $t_{ij}$ represents the target at time step $j$ in light curve $i$ and $y_{ij} = y(X_i,W)_j$.
 
-To define our loss function, which we aim to minimize, we take the negative of $\log p(T|X,W)$, averaged over the number of light curves $M$ and the number of data points per light curve $N$, i.e. for a single light curve $i$ we have the loss:
-
+To define our loss function, which we aim to minimize, we take the negative of $\log p(T|X,W)$, averaged over the number of samples $M$ and the number of data points per sample $N$, i.e. for a single light curve segment $i$ we have the loss:
 \begin{equation}
     \mathcal{L}_{\text{BCE},i} = \frac{1}{N}\sum^{N}_{j=1} l_{ij} + (1 - t_{ij}) \log (1 - y_{ij}),
 \end{equation}
 
 \noindent where we used $l_{ij} = t_{ij} \log( y_{ij})$, and the subscript BCE because this is known as the binary cross-entropy loss.
-Using this loss function for a batched training with batch sizes of $M$, i.e. $M$ light curve segments per batch, we get
-
+Using this loss function for a batched training with $M$ light curve segments per batch, we get:
 \begin{equation}
-    \mathcal{L}_{\text{BCE}} = \frac{1}{M} \sum_{i=1}^M \mathcal{L}_{\text{BCE},i}
+    \mathcal{L}_{\text{BCE}} = \frac{1}{M} \sum_{i=1}^M \mathcal{L}_{\text{BCE},i}.
 \end{equation}
 
