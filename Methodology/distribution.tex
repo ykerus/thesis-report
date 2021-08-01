@@ -46,6 +46,7 @@ Our network outputs a value $y_j \in (0,1)$ for each $x_j$, using the function $
 
 To define our loss function, which we aim to minimize, we take the negative of $\log p(T|X,W)$, averaged over the number of samples $M$ and the number of data points per sample $N$, i.e. for a single light curve segment $i$ we have the loss:
 \begin{equation}
+    \label{eq:bce_loss}
     \mathcal{L}_{\text{BCE},i} = \frac{1}{N}\sum^{N}_{j=1} l_{ij} + (1 - t_{ij}) \log (1 - y_{ij}),
 \end{equation}
 
