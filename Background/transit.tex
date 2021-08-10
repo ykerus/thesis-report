@@ -10,7 +10,7 @@ Most planets in our Solar System can be directly observed with a small telescope
 \begin{figure}
     \centering
     \includegraphics[width=0.4\linewidth]{Background/Figures/transit_drawing.pdf}
-    \caption{\todo{caption}}
+    \caption{An illustration of a planet (black) transiting in front of its host star. The planet blocks a fraction of the star's emitted light, so we observe a dip in the light curve of the star. The depth of this transit signal depends on the planet radius $R_{pl}$ relative to the star's radius $R_*$.}
     \label{fig:transit}
 \end{figure}
 
@@ -25,9 +25,8 @@ In case the eccentricity of the planet's orbit is 0, i.e. the orbit describes a 
 \begin{figure}
     \centering
     \includegraphics[width=0.6\linewidth]{Background/Figures/folding.pdf}
-    \caption{\todo{caption, $P= 2.0313$d , $t_0= 0.2120$d}}
+    \caption{An example of ``folding'' a light curve as a means increasing the signal-to-noise ratio (SNR) of a transit signal. In the original light curve, five transit events with $P= 2.03$ days, $t_0= 0.21$ days are hidden in the noise. These become visible when the light curve is folded over the correct period, as shown on the right. The red line indicates the running mean over 15 data points.}
     \label{fig:folding}
 \end{figure}
-
 
 Figure \ref{fig:folding} shows a more realistic, but simulated light curve with five transit signals of a single planet. The light curve is dominated by white noise and the transit signals are therefore difficult to recognize. For this reason, the transit method often works better if the input light curve is ``folded'' over the period of the planet. In the resulting phase curve, the signal-to-noise ratio (SNR) of the signal is then increased compared to the individual signals in the original light curve. The problem in detection, however, is that the correct period of a planet is not known beforehand, let alone the fact that there may not be a planet in the first place.

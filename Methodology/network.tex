@@ -2,7 +2,14 @@
 \section{Network}
 \label{sec:network}
 
-The basis network architecture, training objective and procedure are described in the following sections. The main task of the network is to classify individual data points as signal or non-signal, where every data point within the duration of a transit is considered as part of the signal. Extensions, such as the prediction of flux values within data gaps, are described in separate sections, as these require slightly different network architectures and training. All of the following was implemented using PyTorch (version 1.8.1).
+The basis network architecture, training objective and procedure are described in the following sections. The main task of the network is to classify individual data points as signal or non-signal, where every data point within the duration of a transit is considered as part of the signal. Extensions, such as the prediction of flux values within data gaps, are described in separate sections, as these require slightly different network architectures and training. A visualization of the network is given in Figure \ref{fig:network}. All of the following was implemented using PyTorch (version 1.8.1). 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.7\linewidth]{Methodology/Figures/network_drawing.pdf}
+    \caption{(a) The basis RNN which takes as input $x_1,\dots,x_{N}$ and outputs $y_1,\dots,y_{N}$. Colors indicate which blocks share the same weights and arrows indicate the flow of information. The outputs of both components of the bidirectional recurrent layer are concatenated before they are passed to the fully-connected (FC) layers. (b) The network is extended in several ways. First, we may use additional inputs $C_j$, e.g. centroid data, at each time step $j$. Second, we may add an additional network of FC-layers, to obtain an additional outputs $a_j$, e.g. confidence values, or representation vectors. }
+    \label{fig:my_label}
+\end{figure}
 
 \subsection{Architecture}
 \label{sec:architecture}
