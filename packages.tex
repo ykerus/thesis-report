@@ -47,3 +47,10 @@
 \usetikzlibrary{arrows}   % graphical model
 \usetikzlibrary{backgrounds}  % graphical model
 
+
+\usepackage{afterpage}  % inserting blank page
+\newcommand\blankpage{%
+    \null
+    \thispagestyle{empty}%
+    \addtocounter{page}{-1}%
+    \newpage}

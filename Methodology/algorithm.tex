@@ -2,7 +2,7 @@
 \section{Detection algorithm}
 \label{sec:algorithm}
 
-In case the search for signals is directed towards monotransits, the network outputs for a given input light curve can directly be used for detection. For example, one can set a threshold on peaks in the PTS, which can be considered as candidate detections. In case we wish to search for repeating signals, the RNN outputs alone are not enough. In order to compare the performance of an RNN-based detection algorithm with conventional methods such as BLS, we also need to determine the period and epoch of the signal. Two different algorithms are tested to do so, which only make use of the RNN outputs, i.e. the PTS, for a given input light curve. 
+In case the search for signals is focused on monotransits, the network outputs for a given input light curve can directly be used for detection. For example, one can set a threshold on peaks in the PTS, which can be considered as candidate detections. In case we wish to search for repeating signals, the RNN outputs alone are not enough. In order to compare the performance of an RNN-based detection algorithm with conventional methods such as BLS, we also need to determine the period and epoch of the signal. Two different algorithms are tested to do so, which only make use of the RNN outputs, i.e. the PTS, for a given input light curve. 
 
 \subsection{PTS-Peak}
 \label{sec:pts-peak}
@@ -27,19 +27,19 @@ As proposed by \cite{pearson2018searching}, one could use the distances between 
 \subsection{PTS-Fold}
 \label{sec:pts-fold}
 
-It could be that individual transit events are missed by the RNN, or that peaks in the PTS are too weak to be taken into account by PTS-Peak. To be less dependent on distinguishable peaks in the PTS, but more on overall response to transit signals, we define another algorithm which we refer to as PTS-Fold. This algorithm is similar to many existing detection algorithms (e.g. phase dispersion minimization or BLS) in that it folds the input time series over a set of trial periods. However, whereas other algorithms fold the raw light curve over trial periods, PTS-Fold only folds the PTS. Since each value the PTS indicates the extend to which a transit signal might be present at the corresponding time step, we can efficiently compute a candidate detection score for repeating signals by aggregating overlapping data points in the folded PTS. To clarify, the algorithm used takes the following steps:
+It could be that individual transit events are missed by the RNN, or that peaks in the PTS are too weak to be taken into account by PTS-Peak. To be less dependent on distinguishable peaks in the PTS, but more on overall response to transit signals, we define another algorithm which we refer to as PTS-Fold. This algorithm is similar to many existing detection algorithms (e.g. phase dispersion minimization or BLS) in that it folds the input time series over a set of trial periods. However, whereas other algorithms fold the raw light curve over trial periods, PTS-Fold only folds the PTS. Since each value in the PTS indicates the extent to which a transit signal might be present at the corresponding time step, we can efficiently compute a candidate detection score for repeating signals by aggregating overlapping data points in the folded PTS. To clarify, the algorithm used takes the following steps:
 
 \begin{enumerate}
     \item The PTS is smoothed using a one-dimensional Gaussian filter with a standard deviation of 9 data points.
     \item A set of trial periods is determined based on the time steps in the PTS. Our input is of 2-minute cadence, so the trial periods are exactly multiples of 2 minutes. The differences between subsequent trial periods increases roughly linearly with the value for the trial period to reduce computational requirements.
-    \item For each trial period, the PTS is folded such that at each point in the phase curve consists of a set of overlapping points. 
+    \item For each trial period, the PTS is folded such that each point in the phase curve consists of a set of overlapping points from the original PTS. 
     \item For each fold, each point in the phase curve is given a score by aggregating the individual overlapping PTS values, i.e. for a single point with overlapping values $y_0,\dots,y_{E-1}$:
     \begin{equation}
         score = \frac{1}{\sqrt{E}} \sum_{n=0}^{E-1}y_n.
     \end{equation}
-    The maximum scoring point and corresponding value for epoch for each fold is passed to the next step. 
+    The maximum scoring point and corresponding value for epoch for each fold are passed to the next step. 
     \item The result, i.e. the maximum score for each trial period, defines the PTS-Peak periodogram and can directly be used to set a detection threshold. For example, a peak in the periodogram above a given threshold may indicate a detection with corresponding parameters for the period and the epoch.
-    \item To search for multiple planets in a single light curve, we mask the previously detected signal in the PTS and repeat the process. However, in order to mask detected signals, we need to have an estimate of the duration of the individual events. For efficiency, we avoided the determination of the duration during search. To obtain a rough estimation for the duration but maintain this efficiency, we therefore use the width $\Delta P$ of the peak in the periodogram at half of its maximum, and translate this to the candidate duration according to $\tau_c = (E-1)\frac{1}{2}\Delta P$, where $E$ is the number of events belonging to the detected signal. The relation between the peak width and the duration of the signal is illustrated in Figure \ref{fig:fold_drawing}.
+    \item To search for multiple planets in a single light curve, we mask the previously detected signal in the PTS and repeat the process. However, in order to mask detected signals, we need to have an estimate of the duration of the individual events. For efficiency, we avoided the determination of the duration during search. To obtain a rough estimation for the duration but maintain efficiency, we therefore use the width $\Delta P$ of the peak in the periodogram at half of its maximum, and translate this to the candidate duration according to $\tau_c = (E-1)\frac{1}{2}\Delta P$, where $E$ is the number of events belonging to the detected signal. The relation between the peak width and the duration of the signal is illustrated in Figure \ref{fig:fold_drawing}.
     
     
 \end{enumerate}

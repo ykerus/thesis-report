@@ -27,7 +27,7 @@ The network is used to model $p(T|X)$, where $T$ represents the targets $\{t_j\}
 \begin{equation}
     p(T|X) = p(t_1,\dots,t_N|X) = \prod_{j=1}^N p(t_j|X)
 \end{equation}
-In other words, we assume that knowing the a target $t_{k}$ at time step $k \neq j$ in addition to the flux values $X$, would not make a difference for the probability of observing $t_j = 1$, compared to only knowing $X$. Therefore, the only information we feed to the network at each time step is $x_j$.
+In other words, we assume that knowing the target $t_{k}$ at time step $k \neq j$ in addition to the flux values $X$, would not make a difference for the probability of observing $t_j = 1$, compared to only knowing $X$. Therefore, the only information we feed to the network at each time step is $x_j$.
 
 Our network outputs a value $y_j \in (0,1)$ for each $x_j$, using the function $Y = f(X, W)$, where $W$ represents the weights of the network. $Y$ represents the collection of outputs $\{y_j\}_{j=1}^N$. We interpret $y_j$ as the conditional probability $y_j = p(t_j=1|X,W)$, such that $p(t_j=0|X,W)$ is given by $1-y_j$. The conditional distribution of targets at time step $j$ is then given by:
 \begin{equation}

@@ -1,11 +1,12 @@
 
 \section{Recurrent neural network (RNN)}
+\label{sec:rnn}
 
-RNNs seem to be missing from literature concerning transit detection. They have, however, been applied in related tasks. In the following subsections, we first describe what RNNs are, after which we discuss different application of this network in related fields.
+RNNs seem to be missing from literature concerning transit detection. They have, however, been applied in related tasks. In the following subsections, we first describe what RNNs are, after which we discuss different applications of this network in related fields.
 
 \subsection{Theory}
 
-\noindent The field of machine learning covers a broad range of techniques and methods, e.g. k-nearest neighbours, decision trees, linear regression. A subfield of machine learning is deep learning, which is based on artificial neural networks (NNs) such as the RNN and CNN. A simple NN architecture is the multilayer perceptron (MLP), which is a network consisting of fully-connected (FC) layers of computational units, often referred to as neurons or nodes. The output at each layer $h_{i} \in \mathbb{R}^{n}$ in an MLP can be obtained by transforming the preceding layer $h_{i-1} \in \mathbb{R}^{m}$ as:
+\noindent The field of machine learning covers a broad range of techniques and methods. A subfield of machine learning is deep learning, which is based on artificial neural networks (NNs) such as the RNN and CNN. A simple NN architecture is the multilayer perceptron (MLP), which is a network consisting of fully-connected (FC) layers of computational units, often referred to as neurons or nodes. The output at each layer $h_{i} \in \mathbb{R}^{n}$ in an MLP can be obtained by transforming the preceding layer $h_{i-1} \in \mathbb{R}^{m}$ as:
 \begin{equation}
     h_{i} = \phi(W_{i-1,i} h_{i-1} + b_{i}),
 \end{equation}
@@ -17,16 +18,16 @@ where $W_{i-1,i} \in \mathbb{R}^{n \times m}$ is the weight matrix between layer
 The network's output $y$ for a given input $X \in \mathbb{R}^N$ is given by the function $y = g(X, W)$, which represents the neural network. In this notation, we use $W$ to refer to the collection of all weight and bias parameters in the network. For example, for an MLP with one hidden layer we have  
 \begin{equation}
     \label{eq:mlp_function}
-    g(X, W) = \psi(W_{1,2} (\phi(W_{0,1} X + b_{0})) + b_{1}),
+    g(X, W) = \psi(W_{1,2} (\phi(W_{0,1} X + b_{0})) + b_{1}).
 \end{equation}
 
-\noindent where, for example, in the case of binary classification, the scalar output $y$ is mapped between 0 and 1 by choosing 
+\noindent For example, in the case of binary classification, the scalar output $y$ can be mapped between 0 and 1 by choosing 
 $\psi(a) = \sigma(a)$, where $\sigma(a)$ is the logistic sigmoid function given by
 \begin{equation}
     \sigma(a) = \frac{1}{1+\exp(-a)}.
 \end{equation}
 
-For an RNN, the network function, say $f(X,W)$, is more complicated. This is because an RNN uses each element $x_j$ in $X$ to update its hidden state recursively. Consider $X$ to be a time series, so we can speak of individual time steps $j$ with corresponding data points $x_j$. The hidden state $h_{j} \in \mathbb{R}^K$ of the ``vanilla''-RNN at time step $j$ is given by
+For an RNN, the network function, say $f(X,W)$, is more complicated. This is because an RNN uses each element $x_j$ in $X$ to update its hidden state recursively. Consider $X$ to be a time series, so we can speak of individual time steps $j$ with corresponding data points $x_j$. The hidden state $h_{j} \in \mathbb{R}^K$ of the ``vanilla''-RNN at time step $j$ is given by \citep{yu2019review}: 
 \begin{equation}
     \label{eq:vanilla_rnn}
     h_{j} = \phi(U h_{j-1} + V x_j + b),
@@ -34,7 +35,7 @@ For an RNN, the network function, say $f(X,W)$, is more complicated. This is bec
 
 \noindent where $U \in \mathbb{R}^{K \times K}$ and $V \in \mathbb{R}^{K \times N}$ are weight matrices and $b \in \mathbb{R}^{K}$ the bias vector, which are the same for each time step. An output for each time step can be obtained by applying some function to $h_{j}$. For example, we can apply Equation \ref{eq:mlp_function} to the hidden states of the recurrent layer to obtain an output $y_j$ for each time step $j$, i.e. $y_j= g(h_{j}, W)$. The complete RNN then outputs a vector $Y \in \mathbb{R}^N$ with elements $y_j$ for an input sequence $X$, i.e. $Y = f(X, W)$.
 
-Equation \ref{eq:vanilla_rnn} represents the update rule for a unidirectional RNN, i.e. an RNN which only propagates through time in one direction. However, in some applications it is beneficial to utilize information form both directions in time. This can be achieved by concatenating the hidden states of two RNN components, propagating though the input in opposite directions:
+Equation \ref{eq:vanilla_rnn} represents the update rule for a unidirectional RNN, i.e. an RNN which only propagates through time in one direction. However, in some applications it is beneficial to utilize information from both directions in time and use a bidirectional RNN instead \citep{schuster1997bidirectional}. This can be achieved by concatenating the hidden states of two RNN components, propagating through the input in opposite directions:
 \begin{equation}
     H_j =  
     \begin{bmatrix}
@@ -46,19 +47,19 @@ Equation \ref{eq:vanilla_rnn} represents the update rule for a unidirectional RN
         \phi(U' h'_{j+1} + V' x_j + b')
     \end{bmatrix}.
 \end{equation}
-$h'_j$ is of the same dimensionality as $h_j$ and is obtained using weight matrices $V'$ and $W'$ and bias vector $b'$, which are of the same dimensionality as $V$, $W$ and $b$ respectively. The result, $H_j \in \mathbb{R}^{2K}$, can be used in the same way as before, e.g. $y_j= g(H_{j}, W)$.
+$h'_j$ is of the same dimensionality as $h_j$ and is obtained using weight matrices $V'$ and $W'$ and bias vector $b'$, which are of the same dimensionality as $V$, $W$ and $b$ respectively. The output of the bidirectional RNN, $H_j \in \mathbb{R}^{2K}$, can be used in the same way as before, e.g. $y_j= g(H_{j}, W)$.
 
-The key to a well-performing network is not only to have an appropriate network architecture, but also to have a good training procedure. A network is trained by updating its trainable parameters $W$ to optimize for a given cost or loss function $\mathcal{L}$. To do so, generally the derivative of $\mathcal{L}$ is taken with respect to $W$ with a process called ``backpropagation'', which efficiently computes the gradient at each layer using the chain rule. The derivative can be used to update $W$ in the direction of a lower loss value, for example using stochastic gradient descent (SGD) or more advanced optimization algorithms such as Adam \citep{kingma2014adam}.
+The key to a well-performing network is not only to have an appropriate network architecture, but also to have a good training procedure. A network is trained by updating its trainable parameters $W$ to optimize for a given cost or loss function $\mathcal{L}$. To do so, generally the derivative of $\mathcal{L}$ is taken with respect to $W$ with a process called ``backpropagation'', which efficiently computes the gradient at each layer using the chain rule \citep{rumelhart1985learning}. The derivative can be used to update $W$ in the direction of a lower loss value, for example using stochastic gradient descent (SGD) or more advanced optimization algorithms such as Adam \citep{kingma2014adam}.
 
-Given a data set, the network is generally trained on a ``training'' subset, evaluated on a ``validatation'' subset after each training iteration, and applied to an unseen ``test'' subset to evaluate its final performance after training. Overfitting occurs when a network performs well on the training set, but poorly on the validation or test set. One could avoid overfitting by applying a penalty on the norm of the weights in the network, e.g. L2 regularization:
+Given a data set, the network is generally trained on a ``training'' subset, evaluated on a ``validation'' subset after each training iteration, and applied to an unseen ``test'' subset to evaluate its final performance after training. Overfitting occurs when a network performs well on the training set, but poorly on the validation or test set. One could avoid overfitting by applying a penalty on the norm of the weights in the network \citep{krogh1992simple}, e.g. L2 regularization:
 \begin{equation}
     \mathcal{L} = \mathcal{L'} + \frac{\alpha}{2} \|W\|_2^2.
 \end{equation}
 Here $\mathcal{L'}$ is a task-dependent loss term, $\|W\|_2^2$ is the sum over all weight values squared, and $\alpha$ is the parameter that is used to tune the weight penalty. For SGD, L2 regularization is also referred to as weight decay, but for adaptive gradient algorithms such as Adam, these two terms are not equivalent \citep{loshchilov2017decoupled}. The authors of this work therefore propose a modification to be used for adaptive gradient algorithms, which they refer to as decoupled weight decay.
 
-Another problem may occur if the network has many layers. Since the gradient of the first layer in the network is computed using the chain rule, i.e. by multiplying the gradients of all subsequent layers, we may have that the gradients quickly explode or vanish. For a vanilla-RNN this is problematic, because the gradient is propagated through time, in which we treat each time step in the RNN as a separate layer. Suppose that the input $X$ consists of 1000 data points. Even if the gradients of each individual layer lie around 0.9, then the gradients of the loss with respect to the weights of the first layer can get as low as $0.9^{1000}\approx10^{-46}$. This means that earlier time steps will contribute very little to the weight update, and the RNN will not be able to learn long term dependencies.
+Another problem may occur if the network has many layers. Since the gradient of the first layer in the network is computed using the chain rule, i.e. by multiplying the gradients of all subsequent layers, we may have that the gradients quickly explode or vanish. For a vanilla-RNN this is problematic, because the gradient is propagated through time, in which we treat each time step in the RNN as a separate layer. Suppose that the input $X$ consists of 1000 data points. Even if the gradients of each individual layer have values around 0.9, then the gradients of the loss with respect to the weights of the first layer can get as low as $0.9^{1000}\approx10^{-46}$. This means that earlier time steps will contribute very little to the weight update, and the RNN will not be able to learn long term dependencies.
 
-For this reason, different RNN architectures have been proposed. Several proposed RNN architectures use gates to better control the flow of information. One of these is the long short-term memory (LSTM, \cite{hochreiter1997long}) RNN. For LSTM, Equation \ref{eq:vanilla_rnn} can be replaced by the following\footnote{\url{https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html}}: 
+For this reason, different RNN architectures have been proposed. Several proposed RNN architectures use gates to better control the flow of information. One of these is the long short-term memory (LSTM, \cite{hochreiter1997long}) RNN. For LSTM, Equation \ref{eq:vanilla_rnn} can be replaced by the following\footnote{\url{https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html}. Accessed: 18-08-2021.}: 
 \begin{align}
     i_j &= \sigma(W_{ii}x_j + b_{ii} + W_{hi}h_{j-1} + b_{hi}) \\
     f_j &= \sigma(W_{if}x_t + b_{if} + W_{hf}h_{j-1} + b_{hf}) \\
@@ -69,7 +70,7 @@ For this reason, different RNN architectures have been proposed. Several propose
 \end{align}
 where  $\odot$ is the element-wise product. The gates $i_j$, $f_j$, $g_j$, $o_j$ are known as the input, forget, cell and output gates respectively, and $c_j$ is known as the cell state. 
 
-Another, yet similar, architecture is the gated recurrent unit (GRU, \cite{cho2014learning}) RNN. For GRU, Equation \ref{eq:vanilla_rnn} can be replaced by the following\footnote{\url{https://pytorch.org/docs/stable/generated/torch.nn.GRU.html}}:
+Another, yet similar, architecture is the gated recurrent unit (GRU, \cite{cho2014learning}) RNN. For GRU, Equation \ref{eq:vanilla_rnn} can be replaced by the following\footnote{\url{https://pytorch.org/docs/stable/generated/torch.nn.GRU.html}. Accessed: 18-08-2021.}:
 \begin{align}
     r_j &= \sigma(W_{ir}x_j + b_{ir} + W_{hr}h_{j-1} + b_{hr}) \\
     z_j &= \sigma(W_{iz}x_j + b_{iz} + W_{hz}h_{j-1} + b_{hz}) \\   
@@ -77,17 +78,17 @@ Another, yet similar, architecture is the gated recurrent unit (GRU, \cite{cho20
     h_j &= (1 - z_j) \odot n_j + z_j \odot h_{j-1},
 \end{align}
 
-\noindent where the gates $r_j$, $z_j$, $n_j$ are known as reset, update and new gates respectively. GRU has fewer gates and thus fewer parameters than LSTM. In some cases, however, exploding gradient can still cause problems \citep{kanai2017preventing}. 
+\noindent where the gates $r_j$, $z_j$, $n_j$ are known as reset, update and new gates respectively. GRU has fewer gates and thus fewer parameters than LSTM. In some cases, however, exploding gradients can still cause problems \citep{kanai2017preventing}. 
 
 \subsection{Applications}
 
-RNNs have been applied to light curves to predict stellar parameters and the number of potential transit signals by \cite{hinners2018machine}. In the latter, however, the bidirectional LSTM (bi-LSTM) only achieved near-random results, which the authors attributed to the imbalance in the data. We note that it might also have been due to the sparse learning signal that is given to the RNN. Namely, only after having seen about 7000 input data points, the RNN outputs a single classification vector or value, for which a learning signal is given. This way, figuring out where transit signals are present in a given light curve can only be learned implicitly by the model, even though we have the possibility to provide this information as learning signal at every time step.
+RNNs have been applied to light curves to predict stellar parameters and the number of potential transit signals by \cite{hinners2018machine}. In the latter, however, the bidirectional LSTM (bi-LSTM) only achieved near-random results, which the authors attributed to the imbalance in the data. We note that it might also have been due to the sparse learning signal that is given to the RNN. Namely, only after having seen about 7000 input data points, the RNN outputs a single classification vector or value, for which a learning signal is given. This way, figuring out where transit signals are present in a given light curve can only be learned implicitly by the model, even though we have the possibility to provide this information as a learning signal at every time step.
 
 Another application of the RNN is that of detrending light curves \citep{morvan2020detrending}. An LSTM was trained to learn out-of-transit patterns, and interpolate these within the duration of a given transit signal. By doing so, the authors show that the background of a transit signal can be better subtracted, which allows for better characterization of the exoplanet. Results improved if centroid data was included.
 
 Other applications of RNN mostly involve the classification of light curves as a whole, for example for the classification of variable stars. \cite{jamal2020neural} compare different neural network architecture for this task, including dilated temporal convolutional networks (dTCNs), LSTMs, GRUs, temporal convolutional NNs (tCNNs) and encoder-decoder models. The LSTM and tCNN were found to be performing best, with the latter having the benefit of shorter computation times. 
 
-In the context of variable star classification, the problem of irregularly sampled time series is addressed by \cite{naul2018recurrent}. To deal with this problem, time intervals between measurements are used as additional input to the RNN. \cite{becker2020scalable} also experiment with time intervals between measurements as inputs to their model, and additionally use differences between flux values as inputs instead of their raw values. They used GRU over LSTM, because of its roughly similar performance, but lower computational requirements. Within machine learning literature, other methods have been proposed to deal with irregularly sampled time series. One of these methods is the ODE-RNN \citep{rubanova2019latent, chen2018neural}, which is an RNN based on ordinary differential equations, which allow time to be treated as continuous instead of discrete. Although this architecture seems beneficial for our purposes, it comes at the cost of altering of the training process as opposed to using a standard RNN, in which batched training does not come straightforward. Moreover, the benefits of the ODE-RNN mostly come forward if the sampled input data is sparse. In the task of transit detection, however, this is not the case as we generally have transit durations in the order of hours and an observation cadence in the order of minutes.
+In the context of variable star classification, the problem of irregularly sampled time series is addressed by \cite{naul2018recurrent}. To deal with this problem, time intervals between measurements were used as additional input to the RNN. \cite{becker2020scalable} also experimented with time intervals between measurements as inputs to their model, and additionally used differences between flux values as inputs instead of their raw values. They used GRU over LSTM, because of its roughly similar performance, but lower computational requirements. Within machine learning literature, other methods have been proposed to deal with irregularly sampled time series. One of these methods is the ODE-RNN \citep{rubanova2019latent, chen2018neural}, which is an RNN based on ordinary differential equations, which allow time to be treated as continuous instead of discrete. Although this architecture seems beneficial for our purposes, it comes at the cost of altering the training process as opposed to using a standard RNN, in which batched training does not come straightforward. Moreover, the benefits of the ODE-RNN mostly come forward if the sampled input data is sparse. In the task of transit detection, however, this is not the case as we generally have transit durations in the order of hours and an observation cadence in the order of minutes.
 
 Unrelated to exoplanet science or light curves, several other works investigate the use of RNNs for the detection of signals in time series. For example, LSTMs have been used to detect anomalies in time series in an unsupervised learning approach \citep{malhotra2015long}. Their RNN is trained to predict subsequent steps of ``normal’’ data, which is clear of anomalies, and a deviation from the predictions is considered as anomaly. The same approach can be used to detect collective anomalies \citep{bontemps2016collective}, i.e. anomalies that cover multiple data points. Transit signals can be seen as collective anomalies in time series dominated by ``normal’’ stellar activity. However, as noted by \cite{cherdo2020training}, this ``unsupervised’’ approach still requires knowing which light curves are clear of anomalies. We may never know for sure if a light curve is clear of transit signals, but in some cases we do know for sure whether a transit signal is present. Therefore, we expect a supervised learning approach to be better suited for our task.
 

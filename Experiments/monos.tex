@@ -1,12 +1,12 @@
 \section{Monotransit retrieval}
 \label{sec:monos}
 
-With the knowledge gained on preprocessing, network architectures and training schemes, we now apply the RNN to real-world transit detection. The RNN trained with weighting parameters $p_t=3$ and $w_{ij} = \sqrt{\delta_{ij}/\sigma_i}$, is applied to full-length light curves and tested on its ability of retrieving single transit events in LCSim-Mono. A detection is defined by a peak in the PTS for a given input light curve above a given threshold, which visualized in Figure \ref{fig:mono_example}. In this figure where we also illustrate the use of the confidence outputs produced by the network we refer to as Conf-RNN. It can be seen from the figure that the confidence outputs are as expected, e.g. the network is seems to be less confident at the edges of a transit signal, compared to points around the mid-transit time.
+With the knowledge gained on preprocessing, network architectures and training schemes, we now apply the RNN to real-world transit detection. The RNN trained with weighting parameters $p_t=3$ and $w_{ij} = \sqrt{\delta_{ij}/\sigma_i}$, is applied to full-length light curves and tested on its ability of retrieving single transit events in LCSim-Mono. A detection is defined by a peak in the PTS for a given input light curve above a given threshold, which is visualized in Figure \ref{fig:mono_example}. In this figure where we also illustrate the use of the confidence outputs produced by the network we refer to as Conf-RNN. It can be seen from the figure that the confidence outputs are as expected, e.g. the network seems to be less confident at the edges of a transit signal, compared to points around the mid-transit time.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.5\linewidth]{Experiments/Figures/Monos/mono_example.pdf}
-    \caption{An example of how the RNN outputs could be used for monotransit detection. The standard outputs $y$ define the PTS for the given input, which can directly be used the set a threshold on candidate detections (e.g. purple shows candidate detections for $y >0.25$). In case the confidence RNN is used we also get $c$, which we use in two ways in combination with $y$ to define an alternative PTS with the aim of reducing peaks for which the RNN is less certain. These curves, as shown in the bottom panel, can similarly be used to set detection thresholds.}
+    \caption{An example of how the RNN outputs could be used for monotransit detection. The standard outputs $y$ define the PTS for the given input, which can directly be used to set a threshold on candidate detections (e.g. purple shows candidate detections for $y >0.25$). In case the confidence RNN is used we also get $c$, which we use in two ways in combination with $y$ to define an alternative PTS with the aim of reducing peaks for which the RNN is less certain. These curves, as shown in the bottom panel, can similarly be used to set detection thresholds.}
     \label{fig:mono_example}
 \end{figure}
 
@@ -26,7 +26,7 @@ In terms of computational efficiency, the RNN greatly outperformed (our implemen
 \begin{figure}
     \centering
     \includegraphics[width=0.7\linewidth]{Experiments/Figures/Monos/mono_transit_specific.pdf}
-    \caption{A close in on the ability of the presented methods to retrieve specific transit samples, e.g. if the fraction correct is 0.5, then half of the planets were detected in the corresponding parameter bin. Underlying data distributions are shown in gray which also indicate the bins used in the evaluation. The detection threshold for both methods was set closest to a corresponding detection precision of 0.5. Filled regions shows the Wilson score interval \citep{wilson1927probable} which approximates the 95\% confidence interval of the performance within each bin.}
+    \caption{A close in on the ability of the presented methods to retrieve specific transit samples, e.g. if the fraction correct is 0.5, then half of the planets were detected in the corresponding parameter bin. Underlying data distributions are shown in gray which also indicate the bins used in the evaluation. The detection threshold for both methods was set closest to a corresponding detection precision of 0.5. Filled regions show the Wilson score interval \citep{wilson1927probable} which approximates the 95\% confidence interval of the performance within each bin.}
     \label{fig:mono_transits}
 \end{figure}
 
