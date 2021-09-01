@@ -23,12 +23,14 @@
 \input{Titlepage/titlepage}
 \afterpage{\blankpage}
 \input{abstract}
-\todo{write Acknowledgements}
+\afterpage{\blankpage}
+\input{acknowlgm}
+
 
 {
   \hypersetup{linkcolor=black}
   \tableofcontents
-}
+}\afterpage{\blankpage}\afterpage{\blankpage}
 
 \chapter{Introduction}
 \label{chap:introduction}
@@ -38,6 +40,7 @@
 \input{Introduction/approaches}
 \input{Introduction/proposed}
 \input{Introduction/contributions}
+\afterpage{\blankpage}
 \input{Introduction/outline}
 
 \chapter{Background}
@@ -48,6 +51,7 @@
 \input{Background/challenges}
 \input{Background/detection}
 \input{Background/rnn}
+\afterpage{\blankpage}
 
 \chapter{Methodology}
 \label{chap:methodology}
@@ -68,6 +72,7 @@
 \input{Experiments/singles}
 \input{Experiments/multis}
 \input{Experiments/cases}
+\afterpage{\blankpage}
 
 \chapter{Discussion}
 \label{chap:discussion}
@@ -79,6 +84,7 @@
 \chapter{Conclusions}
 \label{chap:conclusions}
 \input{Conclusions/intro}
+\afterpage{\blankpage}
 
 \bibliography{library} 
 \addcontentsline{toc}{chapter}{References}

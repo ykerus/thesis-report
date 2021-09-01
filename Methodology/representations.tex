@@ -10,7 +10,7 @@ To illustrate how one could use an RNN and still take into account different sig
 In the supervised learning approach, we know whether A and B are signals caused by the same planet or not. Assuming that both A and B are true detections, we call A and B a positive pair if they are caused by the same planet, and a negative pair if they are signals from different planets. Actually, the network outputs a representation for each time step, regardless of whether a signal was detected at that time step. Therefore, $R_\text{A}$ and $R_\text{B}$ may as well be the aggregated representations of any two disjunct parts of the input light curve. A and B are thus also called a positive pair if they both cover a non-signal part of the light curve, and they are also called a negative pair if only one of the two corresponds to a transit signal and the other does not.
 
 
-The network is trained to represent positive pairs similarly, and negative pairs differently. This is achieved by adding a score of similarity between $R_\text{A}$ and $R_\text{B}$ to the loss function. The score of similarity used in this work is the cosine of the angle $\theta_{\text{A}, \text{B}}$ between $R_\text{A}$ and $R_\text{B}$, or cosine similarity, which is more often used in literature for similar purposes (see e.g. \cite{dong2006cosine}):
+The network is trained to represent positive pairs similarly, and negative pairs differently. This is achieved by adding a score of similarity between $R_\text{A}$ and $R_\text{B}$ to the loss function. The score of similarity used in this work is the cosine of the angle $\theta_{\text{A}, \text{B}}$ between $R_\text{A}$ and $R_\text{B}$, or cosine similarity, which is more often used in literature for similar purposes (e.g. \citealp{dong2006cosine}):
 
 \begin{equation}
     \text{sim}(\text{A}, \text{B})  = \frac{R_\text{A} \cdot R_\text{B}}{\|R_\text{A}\|\|R_\text{B}\|} = \cos(\theta_{\text{A}, \text{B}}).
@@ -31,3 +31,5 @@ During training, we present the network with pairs of light curves with the same
 \end{equation}
 
 \noindent where $\lambda$ is used to weigh the representation term. In this case $\mathcal{L}_{\text{BCE}, i}$ is the average of the BCE loss term over both light curve segments in the input pair.
+
+The representation RNN as described in this section is used in Section \ref{sec:cases} as a means to illustrate how representations provide useful information in addition to the standard outputs of the RNN. 

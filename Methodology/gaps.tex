@@ -12,4 +12,4 @@ If we naively pass a light curve with missing values through the RNN, then varyi
     \mathcal{L}_i = \mathcal{L}_{\text{BCE},i} + \lambda \mathcal{L}_{\text{MSE},i}.
 \end{equation}
 
-\noindent When this network is applied to a light curve with missing data, we replace a missing value $x_{ij}$ = NaN with the predicted value $\hat{x}_{ij}$ and use it as input to the network instead.
+\noindent When this network is applied to a light curve with missing data, we replace a missing value $x_{ij}$ = NaN with the predicted value $\hat{x}_{ij}$ and use it as input to the network instead. The generative RNN as described in this section is used in Section \ref{sec:preprocessing} in comparison to other gap-filling approaches.

@@ -13,7 +13,7 @@ The RNN-based algorithm required a longer computation time in this case than in 
 \begin{figure}
     \centering
     \includegraphics[width=0.35\linewidth]{Experiments/Figures/Singles/single_pr.pdf}
-    \caption{Precision-recall curves for different methods in the task of detecting repeating transit signals of a single planet. The average precision is given between brackets.}
+    \caption{Precision-recall curves for different methods in the task of detecting repeating transit signals of a single planet. The average precision is given between brackets. The best performing BLS variant was BLS-12h and the best performing RNN-based algorithm was PTS-Fold.}
     \label{fig:single_pr}
 \end{figure}
 
@@ -21,7 +21,7 @@ The RNN-based algorithm required a longer computation time in this case than in 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{Experiments/Figures/Singles/single_transit_specific.pdf}
-    \caption{The ability of the presented methods to retrieve planets within the given parameter ranges. A detection threshold was set closest to a corresponding detection precision of 0.5. PTS-Peak is not shown because it behaves similarly but worse than PTS-Fold and would therefore only clutter the image. Filled regions show the Wilson score interval \citep{wilson1927probable}, which approximates the 95\% confidence interval of the performance per bin.}
+    \caption{A closer look into the ability of the presented methods to retrieve planets within the given parameter ranges. A detection threshold was set closest to a corresponding detection precision of 0.5. PTS-Peak is not shown because it behaved similarly but slightly worse than PTS-Fold and would therefore only clutter the image. Filled regions show the Wilson score interval \citep{wilson1927probable}, which approximates the 95\% confidence interval of the performance per bin.}
     \label{fig:single_transit}
 \end{figure}
 
@@ -38,5 +38,5 @@ not PTS-Fold & -         &                  & 7         & (0.01, 0.00)     & 224
 not PTS-Peak & 154       & (0.10, 0.06)     & -         &                  & 342      & (0.21, 0.14)     \\
 not BLS-12h  & 49        & (0.03, 0.02)     & 20        & (0.02, 0.01)     & -        &                  \\ \bottomrule
 \end{tabular}
-\caption{The absolute and relative number of correct detections in the task of retrieving planets with multiple transit signals, where the detection thresholds are set closest to a corresponding detection precision of 0.5. The data contained a total of 2500 planets.}
+\caption{The absolute and relative number of correct detections in the task of retrieving planets with multiple transit signals in LCSim data, where the detection thresholds are set closest to a corresponding detection precision of 0.5. The data contained a total of 2500 planets.}
 \end{table}

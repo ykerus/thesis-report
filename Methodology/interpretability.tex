@@ -20,3 +20,5 @@ $c_{ij}$ is used in the loss function by replacing $y_{ij}$ with $y_{ij}' = c_{i
 \end{equation}
 
 \noindent where $\lambda$ is used as a weighting parameter. In line with \cite{devries2018learning}, we adopt a budget parameter $\beta$ which is used during training to adjust $\lambda$. If $\mathcal{L}_{\text{conf}} > \beta$, then we increase $\lambda$, and if $\mathcal{L}_{\text{conf}} < \beta$, we decrease $\lambda$. Lastly, only for half the samples we use $y'_{ij}$ instead of $y_{ij}$, in order to encourage the network more to learn meaningful decision boundaries. 
+
+The confidence RNN as described in this section is used in Section \ref{sec:monos} in comparison to the basis RNN, in the task of detecting monotransits.

@@ -8,14 +8,14 @@ In this experiment we also include the TESS pipeline detections for the given da
 \begin{figure}
     \centering
     \includegraphics[width=0.35\linewidth]{Experiments/Figures/Multis/multi_pr.pdf}
-    \caption{Precision-recall (PR) curves of different methods in the task of detecting repeating transit signals in light curves of Lilith-Multi. The PR-curve for the pipeline could not be drawn fully due to limited available data.}
+    \caption{Precision-recall curves of different methods in the task of detecting repeating transit signals in light curves of Lilith-Multi. The PR-curve for the TESS pipeline could not be drawn fully due to limited available data.}
     \label{fig:multi_pr}
 \end{figure}
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{Experiments/Figures/Multis/multi_transit_specific.pdf}
-    \caption{The ability of each method to retrieve planets in the given parameter ranges. A detection threshold is set closest to a corresponding detection precision of 0.5. Filled regions show the Wilson score interval \cite{wilson1927probable}, which approximates the 95\% confidence interval of the performance per bin.}
+    \caption{A closer look into the ability of each method to retrieve planets in the given parameter ranges. A detection threshold is set closest to a corresponding detection precision of 0.5. Filled regions show the Wilson score interval \citep{wilson1927probable}, which approximates the 95\% confidence interval of the performance per bin.}
     \label{fig:multi_transit}
 \end{figure}
 
@@ -30,7 +30,7 @@ not PTS-Fold & -        &                   & 522      & (0.53, 0.16)     & 304 
 not BLS-12h  & 22       & (0.04, 0.01)      & -        &                  & 46       & (0.06, 0.01)      \\
 not Pipeline & 87       & (0.18, 0.03)      & 329      & (0.33, 0.10)     & -        &                   \\ \bottomrule
 \end{tabular}
-\caption{The absolute and relative number of correct detections in the task of retrieving planets with multiple transit signals, where the detection thresholds are set closest to a corresponding detection precision of 0.5. For the pipeline, the level of precision is in fact higher and the numbers presented here are relatively small, because we had no access to its lower confidence detections. The data contained a total of 3285 planets.}
+\caption{The absolute and relative number of correct detections in the task of retrieving planets with multiple transit signals in Lilith data, where the detection thresholds are set closest to a corresponding detection precision of 0.5. For the pipeline, the level of precision is in fact higher and the numbers presented here are relatively small, because we had no access to its lower confidence detections. The data contained a total of 3285 planets.}
 \end{table}
 
 \begin{table}[]
@@ -51,5 +51,5 @@ not Pipeline & 87       & (0.18, 0.03)      & 329      & (0.33, 0.10)     & -   
 \multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}4\\ (9)\end{tabular}}    & PTS-Fold & 1   & 0  & 0 & 0 \\
                                                                     & BLS-12h  & 4   & 2  & 1 & 0 \\ \bottomrule
 \end{tabular}
-\caption{The number of correctly detected planets per light curve with a given number of planets. For example, of the 57 light curves that contained 2 planets, PTS-Fold was able to retrieve 2 planets from 5 light curves, and only 1 planet from 13 light curves.  The detection threshold was set closest to a corresponding detection precision of 0.5.}
+\caption{The number of correctly detected planets per light curve with a given number of planets in Lilith data. For example, of the 57 light curves that contained 2 planets, PTS-Fold was able to retrieve 2 planets from 5 light curves, and only 1 planet from 13 light curves.  The detection threshold was set closest to a corresponding detection precision of 0.5. We can see that BLS-12h is better able to detect multiple planets in the same light curve than PTS-Fold.}
 \end{table}
